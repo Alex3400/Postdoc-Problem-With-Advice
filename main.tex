@@ -72,12 +72,7 @@ University of Liverpool}
 \setcounter{page}{1} 
 \clearpage \newpage
 
-\thispagestyle{empty}
-\begin{center}
-{\LARGE\bf
-Postdoc Problem with Advice}
-\end{center} 
-\newpage
+
 \pagenumbering{arabic}
 
 
@@ -95,12 +90,6 @@ This paper investigates an extension of the ``Secretary problem'', a classic onl
 
 
 
- \section{Statement of Ethical Compliance: Data Category: A0}
-
-I confirm that I will follow the ethical guidance provided by 
-the institution, ensuring the ethical
-treatment of data and participants as per the university’s policy.
-
 \tableofcontents
 
     
@@ -108,19 +97,17 @@ treatment of data and participants as per the university’s policy.
 
 \subsection{Literature Review of Secretary Problems Variants}
 
-\paragraph{The Secretary Problem} The Secretary Problem is a classic example of an \textit{online stopping problem}, a problem in which there is a continuous stream of input and a decision needs to be made with partial information. In the Secretary Problem, you have the opportunity to interview $n$ candidates for a secretary position who are given a numerical score and need to make an irrevocable decision on whether to hire them or not. The goal is to hire the secretary with the highest score. This problem is called \textit{online} because it involves making a decision at each step of the program, to hire or not hire the current secretary, with only the information you presently have.
+\paragraph{The Secretary Problem}In the Secretary Problem, you have the opportunity to interview $n$ candidates for a secretary position who are given a numerical score and need to make an irrevocable decision on whether to hire them or not. The goal is to hire the secretary with the highest score.
 
-This problem has been studied extensively and an optimal algorithm and success rate has been proven in multiple ways. These include, dynamic programming/analytically \cite{bayon2017bestorworstpostdocproblems}, Linear Programming \cite{linearProgramming}, and Statistically\cite{foursidecafe}. The optimal algorithm is composed of two phase, first a survey of the applicants where the first $k < n$ applicants are interviewed and categorically rejected, and a second phase where the next best candidate is immediately selected. Through various methods of analysis the theoretically best position to change phase approaches $n/e$ for a probability of success approaching $1/e$ as n tends to infinity.
-
-The strategy used in this case is called a \textit{threshold strategy} which, as the name suggests, involves phases of the strategy which change at certain thresholds. It can be rigorously proven through brute force and utilization of an assumption of the secretaries being uniformly randomly distributed, that an optimal strategy has to be a threshold strategy \cite{bayon2017bestorworstpostdocproblems}.
+The optimal algorithm is composed of two phase, first a survey of the applicants where the first $k < n$ applicants are interviewed and categorically rejected, and a second phase where the next best candidate is immediately selected. Through various methods of analysis the theoretically best position to change phase approaches $n/e$ for a probability of success approaching $1/e$ as the number of candidates, $n$, tends to infinity.
 
 \paragraph{The Secretary Problem With Predictors}
 
 A quite natural extension of this problem in the context of real world job applications is that with each applicant in addition to their score, you are given a ``reference letter''. D\"utting Lattanzi, Paes Leme, and Vassilvitskii~\cite{dütting2020secretariesadvice} explores a reference letter that either claims that they are or are not the best candidate in the applicant pool. This predictor is correct with probability $p \in [0.5,1]$. Should values of p less than 0.5 be included, then the signal could simply be reversed to obtain an effective $1-p \in [0.5,1]$ predictor accuracy
 
-This specific variant of the problem has not been studied much however, the analysis provided in D\"utting et al.\cite{dütting2020secretariesadvice} proves an optimal algorithm with success probability: $$P(\text{success}) = \left(\frac{\left(1-p'\right)}{p}\right)^{\frac{1-p' }{p}}\cdot e^{ \frac{p- 1}{p'} }$$ The optimal strategy is similar to the classic problem with the difference being a third phase between the first and second where it will accept the best applicant seen before only if they are also predicted to be best.  
+The analysis provided in D\"utting et al.\cite{dütting2020secretariesadvice} proves an optimal algorithm with success probability: $$P(\text{success}) = \left(\frac{\left(1-p'\right)}{p}\right)^{\frac{1-p' }{p}}\cdot e^{ \frac{p- 1}{p'} }$$ The optimal strategy is similar to the classic problem with the difference being a third phase between the first and second where it will accept the best applicant seen before if and only if they are also predicted to be best.  
 
-Note that if $p = 1/2$ then the information is useless and the problem is equivalent to the classic Secretary Problem and as $ p $ approaches 1 then the problem is trivial as we are simply told the best candidate. This is reflected by the $P(\text{success}) = 1/e$ and $P(\text{success}) = 1$ in those cases respectively
+Note that if $p = 1/2$ then the information is useless and the problem is equivalent to the classic Secretary Problem. For $p$ equals 1 the problem is trivial as we are simply told the best candidate. This is reflected by the $P(\text{success}) = 1/e$ and $P(\text{success}) = 1$ in those cases respectively
 
 \paragraph{The Postdoc Problem}
 
@@ -128,7 +115,7 @@ A maybe less natural extension is \textit{The Postdoc Problem}. Initially posed 
 
 While it may initially seem to be easier to select a lower scoring candidate, the Postdoc Problem actually has a lower success rate with optimal strategy than the classic Secretary Problem as the number of applicants tend to infinity. The reason for this can be heuristically described as, in the Secretary Problem we are only concerned with picking a worse candidate, whereas in the Postdoc Problem it is possible to pick a candidate that is too good as well as too bad.
 
-By using Hamilton-Jacobi-Bellman equations, Vanderbei \cite{vanderbei2011postdoc}, and previously Rose \cite{Rose}, were able to find a prove the optimality of a strategy that approached a 1/4 probability of success as the number of applicants tends to infinity. 
+By using Hamilton-Jacobi-Bellman equations, Vanderbei \cite{vanderbei2011postdoc}, and previously Rose \cite{Rose}, were able to find and prove the optimality of a strategy that approached a 1/4 probability of success as the number of applicants tends to infinity. 
 
 \subsection{Problem Variant Studied In This Paper} 
 
@@ -136,228 +123,81 @@ By using Hamilton-Jacobi-Bellman equations, Vanderbei \cite{vanderbei2011postdoc
 
 This project will be a discussion of a combination of the two discussed extensions of the Secretary Problem. I will provide analysis of the online problem, the Postdoc Problem with Advice. 
 
-In my problem a known number of applicants, $n$,  each with a score that follows a uniform random distribution that does not allow for draws will sequentially be interviewed. In addition to the score each candidate has, they will also have a reference letter that claims with some known probability $p$ that this applicant is the best candidate in the pool. After each interview an irrevocable decision to hire or not hire them must be made with the interviews ending once a candidate is hired. The only goal of the interview process is to hire the candidate with precisely the second best score.
+In my problem a known number of applicants, $n$,  each with a score that follows a uniform random distribution that does not allow for draws will sequentially be interviewed. In addition to the score each candidate has, they will also have a reference letter that claims with some known probability $p$ that this applicant is or isn't the best candidate in the pool. After each interview an irrevocable decision to hire or not hire them must be made with the interviews ending once a candidate is hired. The only goal of the interview process is to hire the candidate with precisely the second best score out of the $n$ candidates.
 
-One potential issue with this analysis is that in the secretary with reference context the reference is providing information about whether the current candidate is the correct choice, with some probability of correctness. However, in the context of the problem discussed in this paper, the information only indirectly pertains to whether the candidate is the second best candidate. An interesting alternative way of information being presented in reference letters studied by Fujii \& Yoshida~\cite{Fujii_2024} is with predictions of all applicants scores being received in the beginning with some maximum distance from truth. 
-
+One immediate concern is, in the Secretary Problem with Predictors context the reference is providing information about whether the current candidate is the correct choice, with some probability of correctness. However, in the context of the problem discussed in this paper, the information only indirectly pertains to whether the candidate is the second best candidate.
 
 \subsection{Core Aims}
 
-The core aim of this project is to investigate the properties of the \textit{Postdoc Problem with Advice} and its solution. I aim to do this by 
+The core aim of this project is to do things
 
-\begin{itemize}
-    \item Devising algorithms that can outline behaviour for the problem.
-    \item Running simulations to test said algorithms.
-    \item Collecting statistically signifiant data from my trials to draw conclusions about my algorithms.
-    \item Base my algorithms on the strategies used in adjacent problems.
-    \item Perform rigorous analysis of the problem from a mathematical lens.
-\end{itemize}
-
-
-\subsection{Structure of The Dissertation}
-
-The dissertation follows my process of coming up with a solution to the problem including early algorithms and unsuccessful attempts of derivations. A wide overview of the paper is:
-
-\begin{itemize}
-    \item Simulation tool details
-    \item Analysis of known solutions and their relation to this one
-    \item Probability calculations needed for the algorithm(s)
-    \item Algorithm design
-    \item Mathematical Analysis
-    \item Conclusion
-\end{itemize}
-
-\section{Simulation Tool Implementation}
-\label{sec:desgin}
-
-As the algorithms I create will be based on heuristic predictions, it is essential that I have a mean by which to test and compare the algorithms I create against one another and verify theoretical results.
-
-\subsection{Tool requirements}
-
-The requirements I need my tool to fulfil are:
-
-\begin{itemize}
-\item Run simulations of the online stopping problem by generating random lists
-\item Have modifiable goals/success conditions to simulate both the secretary and Postdoc Problem
-\item Generate predictions of whether a candidate is best or not with accuracy $p$
-\item Be modifiable and extendible with minimal overhead to allow for ease of testing
-\item Provide useful and readable outputs for analysis
-\item Be correct in-so-far as match known theoretical results
-\item Run efficiently so as to provide signifiant results in reasonable time frames.
-\end{itemize}
-
-\subsection{General Design}
-
-To fulfil my requirements, I opted for an object oriented python simulation with handlers for different aspects of running tests.
-\begin{itemize}
-\item \verb|TestRunner.py| is responsible for generating candidates, running the simulation the specified number of times, and generating the advice. Each run takes in a number of candidates, $n$, if needed, an accuracy $p$, a problem, i.e. Postdoc or Secretary, a number of loops, and an Algorithm to use.
-
-\begin{itemize}
-\item Secretaries are in the form of a list of integers $[0, \dots ,n-1] $that is randomly permuted. Using integers rather than real numbers in a wider range allows for more efficient generation, however requires that our algorithms act blind to the known second best being $n-2$
-\item the advice is generated by taking in the permuted candidates and then if a random number $\in [0,1]$ is less than $p$ the predictor predicts correctly, and incorrectly otherwise.
-\end{itemize}
-
-\item \verb|Algorithms.py| is responsible for hosting the different algorithms that can be used. Algorithms take in just a list of candidates and optionally a list of predictions and the predictor accuracy. Later algorithms take in an \verb|algNo| to reuse shared operations, such as dynamic updating of the best/second best candidate, and only change behaviour at the return stage.
-
-\begin{itemize}
-\item Algorithms also independently handle calculation of values need for deicide making such as the probability we have seen the best candidate at a given index $k$. It also makes decisions about thresholds, and return behaviour 
-\item for most calculations \verb|numpy| was used for more efficient operations, exponentiating and the value of $e$
-\end{itemize}
-
-\item \verb|main.py| handles the calling of each the test runner, the specification of the algorithm and problem, and the output of the results in a readable format.
-
-\begin{itemize}
-\item As the test runner simply returns the number of successful tests, we are required to calculate the success rate and print information about the trials to the terminal
-\item \verb|matplotlib.pyplot| is used to generate graphs of results to verify expectations.
-\end{itemize}
-\end{itemize}
-
-\subsection{Tool Testing and Examples}
-\label{sec:testingandexamples}
-
-The first usages of my tool was to verify the results of problems adjacent to my own that have been solved. This serves to both validate my tool is working as intended, and to verify first-hand the results on which I will be basing my future work on.
-\paragraph{Secretary Problem results}
-Secretary problem would expect a success rate of $1/e \approx36.788\%$
-\begin{verbatim}
-Running 50000 tests on 200 candidates for secretary problem
-success rate = 36.838%
-\end{verbatim}
-
-\paragraph{Postdoc Problem results}
-Postdoc Problem would expect a success rate of $1/4 = 25.0\%$
-\begin{verbatim}
-Running 50000 tests on 200 candidates for Postdoc Problem
-success rate = 25.032%
-\end{verbatim}
-
-\paragraph{Secretary problem with Advice results}
-In the Secretary problem with Advice with optimal play you would expect a success rate to begin at $1/e$ and approach $1$ as $p$ varies from $0.5\text{ to }1$. We can show this result with a graph comparing the predictor accuracy with overall success rate
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\linewidth]{resources/secretarieswithadvice.png}
-    \caption{Secretary problem with Advice. Ran 50,000 trials with 200 candidates each for each value of p.}
-    \label{fig:ProblemWithAdvice}
-\end{figure}
-
-\subsection{Implementation details and limitations}
-
-All simulations were performed on the following hardware:
-\begin{center}
-\begin{tabular}{ll}
-\textbf{Model:} & MacBook Pro \\
-\textbf{Processor:} & Apple M3 Pro \\
-\textbf{Cores:} & 11 (5 performance, 6 efficiency) \\
-\textbf{Memory:} & 36 GB
-\end{tabular}
-\end{center}
-
-While the simple python script was sufficient for validation of known solutions, for fine tuning algorithms the tool lacks the efficiency needed. For later algorithms there are often differences that are small enough that larger numbers of candidates and trials are required for statistically signifiant differences to be seen. The example computations of 200 candidates and 50,000 loops runs in about 25 seconds however when comparing multiple algorithms for multiple predictor accuracies, the computation time begins to increase.
-
-\paragraph{Parallel computation}
-
-One solution was to use parallel computation to run multiple tests at once instead of sequentially. This was accomplished using the \verb|concurrent.futures.py| package. Simply putting the requests into an executor reduced the run time of 100,000 trials with 200 candidate from 45 seconds to 25 seconds.
-
-While there is a marginal improvement, the parallel computing with python is not achieving sufficient results. We will need tests in the range of tens or hundreds of millions for signifiant results which would take too long to efficiently simulate using python. 
-\paragraph{Kotlin tool}
-To meet my computational needs, in addition to a simulation tool in python that is more fleshed out and useable, I have also created a more efficient tool using the Kotlin programming language. Kotlin is a JVM (Java Virtual Machine) compiled language meaning it offers a signifiant computational power improvement over a run-time interpreted language like python. Additionally, Kotlin has built in functions that allow for easier list operations making it an ideal choice for this use case.\cite{NathanFallet_Gildor_2025}
-
-The Kotlin tool is very similar to the python one in setup, however is only configured to run simulations of the Postdoc Problem with Advice, and is less customisable.
-
-The drawbacks of using a tool written in Kotlin are longer startup times and much more limited data display tools. However, the benefit of moving away from python is a large increase in test efficiency.
-
-While running the same test of 50,000 trials on 200 candidates only resulted in an improvement to 15 seconds, this is largely due to compilation overhead. For larger batches the kotlin tool works much more efficiently being able to running 20,000,000 trials of 200 candidates in 55 seconds.
-
-The kotlin tool is limited to text output, however this data can be pasted directly into python to create more readable plots.
-\begin{table}[H]
-\begin{tabular}{|p{0.23\linewidth}|p{0.23\linewidth}|p{0.12\linewidth}|p{0.12\linewidth}|p{0.12\linewidth}|}
-
-\hline
-Number of Trials & Number of Candidates & Base Python & Parallel Python & Kotlin\\
-\hline
-50,000 &200& 26s & 23s & 15s\\
-\hline
-50,000 & 2000 & 3m2s & 2m54s & 19s\\
-\hline
-500,000 &200& 4m58s & 3m17s & 20s\\
-\hline
-20,000,000& 200 & 5hrs* & 1.5hrs* & 55s\\
-\hline
-100,000,000& 600 & 75hrs* & 22.5hrs* & 8m17s\\
-\hline
-\end{tabular}
-\label{table:1}
-\caption{Time taken for given values and number of trials. Starred values are approximated by running the tests for an hour and extrapolating.}
-\end{table}
-
-\section{Project Ethics}
-
-This project was of a theoretical nature and there were no human participants. All data used was randomly and procedurally generated and calculated. 
-
-While the interviewing of 120,000,000,000 postdoc applicants may raise ethical considerations we can use a computer program to simulate the hiring process removing any such concerns.
-
-\section{Analysis of Adjacent Problems}
+\section{Analysis of Adjacent Problems and Problem Setup}
 \label{sec:synthesis}
+
+For the remainder of this paper, unless otherwise specified, we assume an arbitrarily large number of candidates, $n$.
 
 \subsection{Secretary Problem}
 
 While the Secretary Problem is, at its core, relatively simple, the derivation for the optimal behaviour provides insights into the techniques for more complicated extensions.
 
-See Appendix \ref{sec:AppendixA} for a full analytical derivation of the solution to the Secretary Problem.
+See Appendix \ref{sec:AppendixA} for a full analytical derivation and validation of the solution to the Secretary Problem.
 
 \subsection{Postdoc Problem}
 
 The optimal behaviour for the Postdoc Problem was derived in Vanderbei \cite{vanderbei2011postdoc}. The strategy can be simply described as, after passing for surveying threshold $n/2$, take the first ``second best'' candidate that is shown.
 
-However, in the solved equations it was shown that for $k > n/2$ the the value function coincides with the success rate of a ``best so far candidate''. This means if candidate $k$ is best so far, the success rate of passing to candidate $k+1$ is precisely equal to accepting candidate $k$.
+However, in the solved equations it was shown that for $k > n/2$ the value function coincides with the success rate of a ``best so far candidate''. This means if candidate $k$ is best so far, the success rate of passing to candidate $k+1$ is precisely equal to accepting candidate $k$.
 
 Therefore, while the aforementioned strategy is optimal, it is equivalently optimal for an algorithm to accept or reject best so far candidates randomly so long as second best so far candidates are accepted.
 
 \subsection{Secretary Problem with Advice}
 
-The variation of the problem with predictors not only increase the complexity, but adds another dimension of problems that vary with $p \in [0.5,1]$. The main learning from the Secretary problem with Advice is the specification of the thresholds and how they vary with p. It was discovered in D\"utting et al. \cite{dütting2020secretariesadvice} that the optimal strategy involves two thresholds creating 3 regions of behaviour. For thresholds $t_Y$ and $t_N$ optimal play is: survey for candidates before $t_Y$, only accept a candidate if they are best and predicted best between $t_Y \text{ and } t_N$, and accept any best so far candidate after $t_N$. The calculated values for the functions are:
+The variation of the problem with predictors not only increase the complexity, but adds another dimension of problems that vary with $p \in [0.5,1]$. It was discovered in D\"utting et al. \cite{dütting2020secretariesadvice} that the optimal strategy involves two thresholds creating 3 regions of behaviour. For thresholds $t_Y$ and $t_N$ optimal play is: survey for candidates before $t_Y$, only accept a candidate if they are best and predicted best between $t_Y \text{ and } t_N$, and accept any best so far candidate after $t_N$. The calculated values for the functions are:
 
 $$
 t_Y = \left(\frac{1}{p}-1\right)^{(1/p)}e^{\left(1-1/p\right)} \hspace{4em} t_N = e^{\left(1-1/p\right)}
 $$
 
-with expected end point behaviour of 
-$$
-t_Y(0.5)= t_N(0.5)= 1/e \hspace{4em} t_Y(1) = 0  \hspace{4em} t_N(1) = 1
-$$
+\subsection{Postdoc Problem with Advice Setup}
+An important note about this problem is that for $p = 1$ this problem immediately reduces to the Secretary Problem. This is because we are certain that we have not seen the best candidate until we are told a candidate is best and therefore we can simply discard that candidate when arrived upon. We can rephrase the problem as ``the search for the best candidate we don't have perfect information about''.
 
+After some consideration, we can deduce that the optimal strategy is as follows: Interview the first $n/e$ candidates; then, before encountering the best candidate, select only best so far candidates. After encountering the best candidate, accept the next candidate only if they are the second-best encountered so far.
 
+Fairly immediately, we can conclude that there is only a chance of a given candidate being the true second best if they are currently our ``best so far'' or our ``second best so far''. We can therefore simplify the problem by thinking about how the predictor can supplement our decisions in only these cases.
+
+\paragraph{Best Candidate Behaviour}
+As discussed, with no predictor picking the best seen candidate can only have success rate less than or equal to the probability of passing and simply waiting for the 2nd best seen candidate. We can use the information provided by the reference letter to justify picking the best seen candidate is a situation where the prediction of them not being best makes us more confident that they are truly the second best overall.
+
+Utilizing our $p=1$ example, in this case we are more inclined to pick a ``best so far'' candidate if we have not seen the true best candidate as we know that they are guaranteed to moved to at least second place.
+
+We can fairly safely claim that if a best so far candidate is predicted best it will never be better to accept such a candidate. This is because in the naive case passing and accepting a best candidate have equal success rates therefore, with the predictor providing information suggesting that it is not truly second best, it is further unlikely that it is truly second best.
+
+\paragraph{Second Best Candidate Behaviour}
+The other heuristic lead we can get from a predictor is that if we are confident that we have not seen the best candidate so far, we can be more inclined to pass on a second best so far candidate. This is because if we believe the best candidate is yet to be seen, a second best so far candidate would eventually be moved to 3rd when they arrive. 
+
+Again, we can observe this by considering the case of $p = 1$. Before seeing the one best candidate the success rate of picking a second best candidate is 0. After seeing the best candidate we have a higher success rate by picking the best candidate, however this behaviour is the ``default'' as the predictor-blind algorithm also selects such candidates.
+
+\paragraph{Survey Threshold Behaviour}
+
+While the predictor's influence our individual decisions is limited to the two cases, for high predictor accuracies we can expect to end our survey period earlier. In situations where we more information about our applicants and can expect to make better decisions with less candidates as "data".
+
+Once again, taking our known optimal behaviour at $p = 1$, as we are acting precisely as we do in the secretary problem we know we have a optimal surveying threshold of $n/e$. In the naive case, which is equivalent to $p=0.5$, we have a survey threshold of $n/2$. Therefore, we can assume that our surveying threshold will vary between these to values for value of $p \in (0.5,1)$
 
 \section{Probability Analysis and Problem Setup}
 
-An important note about this problem is that for a value of $p = 1$ and large values of n this problem immediately reduces to the Secretary Problem. This is because we are certain that we have not seen the best candidate until we are told a candidate is best and therefore we can simply discard that candidate when arrived upon. We can rephrase the problem as ``the search for the best candidate we don't have perfect information about''.
 
-As discussed, with no predictor picking the best seen candidate can only have probability equal to the probability of passing and simply waiting for the 2nd best seen candidate. We can use the information provided by the reference letter to justify picking the best seen candidate is a situation where the prediction of them not being best makes us more confident that they are truly the second best overall.
-
-For example, if we have $p = 1$ then we may pick a ``best so far'' candidate if we have not seen the true best candidate as we know that they are guaranteed to moved to at least second place.
 
 \subsection{Probability Best Has Been Seen}
 
-When making decisions we care about how certain we are that we have already seen the best candidate. This depends on 3 factors:
-\begin{itemize}
-\item The number of candidates we have seen
-\item The total number of candidates
-\item Whether the best candidate we have seen is predicted to be best (with probability of accuracy p)
-\end{itemize}
-
-Some considerations before doing analysis on probability are: 
-
-\begin{itemize}
-\item for $p = 1$ we are certain we have not seen the best candidate until we have the predicted best candidate. 
-\item for $k = n$ we are certain we have seen the best candidate regardless of p
-\item As our information is in the form of a binary classifier, we may have sharp changes in strategy. Using the $p =1$ example from earlier, before seeing the best candidate we are will only take the best so far candidate, however immediately after seeing the best candidate we will only take the second best so far candidate.
-\end{itemize}
 
 We define the following events:
 
 Let $R_k = R = \text{The best candidate up to and including k is predicted to be best}$ 
 
-Let $S_k = S= \text{The best candidate up to and including k is the true best candidate}$ \\
+Let $S_k = S= \text{The best candidate up to and including k is the true best candidate}$ 
+
+For having seen $k$ out of $n$ candidates with predictor accuracy $p$:
+
 $$
 P(S) = \begin{cases}
    P(S \mid R) & R\\
@@ -383,47 +223,6 @@ $$
 
 $$
 P(S \mid R^c) = \frac{P(S\cap R^c)}{P(R^c)} = \frac{(1-p)k}{n}\frac{1}{1-(\frac{pk}{n}+(1-p)(1-\frac{k}{n}))}
-$$
-
-\subsection{Confidence Calculation}
-\label{sec:novelAppraoch}
-
-As referenced in previous sections, if we are fairly sure we have not seen the best candidate we will be more inclined to take a best candidate as we can expect this candidate to fall to second.
-
-While the probability that the best candidate has been seen is useful, it is sometimes a misleading statistic. This is because after seeing a majority of candidates, we may have a high probability of the best candidate being seen, but this would be the case even with no predictor ($p = 0.5$). As we know optimal behaviour for the question with no predictor we would like to fit our general solution to this known point.
-
-As such we introduce a new value, \textit{confidence} $ = c\in [0,1]$ which represents a scaled value of the probability we have seen the best candidate based on what we would expect given the number of candidate we have already seen. In the case with no predictor, after seeing $k$ candidates out of $n$ total applicants we have a $k/n$ chance of having seen the best candidate.
-
-For the confidence we require a function $f(P(s)): [0,1] \rightarrow [0,1] \text{ such that}$
-\begin{align}
-f\left(\frac{k}{n}\right) &= 0 \quad\\
-f(0) &= 1\\
-f(1) &= 1
-\end{align}
-
-For example, a function that scales linearly is given by:
-
-$$
-\text{confidence} = c = \begin{cases}
-   \dfrac{P(s) - k/n}{1 - k/n} & P(s) \ge k/n\\[8pt]
-  1- P(s)\frac{n}{k} & P(s) < k/n\\
-\end{cases}
-$$
-
-With a perfect predictor we have a probability of $0$ before seeing the best candidate and a probability of $1$ afterwards, and as discussed with no predictor we always have a probability of $k/n$.
-
-As such, the confidence value for $P(s) \ge k/n$ represents the percentile that $P(s)$ is between $k/n$ and $1$. For values of $P(s) < k/n$ the confidence value is equal to the percentile that $P(s)$ is between $0$ and $k/n$ with confidence $= 1$ for $P(S) =1$ or $0$. Similarly confidence $= 0$ for probability $P(S) = k/n$ after seeing k candidates.
-
-\subsection{Surveying Threshold}
-
-Like the related problems, we will likely have an initial interval where we are only viewing candidates and not accepting under any condition.
-
-Using $p = 0.5$ is equivalent to the Postdoc Problem, and $p = 1 $ is equivalent to the Secretary Problem with stopping points, $n/2$ and $n/e$ respectively. We can conclude that for values of $p$ between 0.5 and 1, we must have a threshold at some point between these values.
-
-For example, a simple linear scale is given by:
-
-$$
-\text{Threshold} = f(p) = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)
 $$
 
 \section{Algorithm Design}
@@ -453,11 +252,12 @@ Utilizing the known behaviour of algorithms at the end points of $p = 0.5$ and $
 \end{algorithm} 
 
 
-As suggested by the name, this algorithm is a perfect fit for the optimal solution when $p = 1$, however has less than optimal behaviour for values of $p$ less than 1. With this algorithm we are fully trusting the prediction of the ``best so far'' secretary by accepting a second best secretary if we are told that we have the best already and only accepting a best secretary if we are told we do not have a best secretary.
+% As suggested by the name, this algorithm is a perfect fit for the optimal solution when $p = 1$, however has less than optimal behaviour for values of $p$ less than 1. With this algorithm we are fully trusting the prediction of the ``best so far'' secretary by accepting a second best secretary if we are told that we have the best already and only accepting a best secretary if we are told we do not have a best secretary.
 
-We can observe the optimal behaviour at $p = 1 $ by comparing this algorithm to the Secretary Problem algorithm and noticing that it shares a threshold of $n/e$ and will accept the second best candidate knowing the best is either yet to come, or has already been interviewed.
+% We can observe the optimal behaviour at $p = 1 $ by comparing this algorithm to the Secretary Problem algorithm and noticing that it shares a threshold of $n/e$ and will accept the second best candidate knowing the best is either yet to come, or has already been interviewed.
 
-However, this methods success rate falls off for smaller values of $p$ at a rate that we can show is suboptimal. We can observe this by considering $p = 0.5$ where we know optimal behaviour is to accept any ``second best so far'' secretary we see after the threshold, $n/2$. Despite the algorithm being fit to have the correct threshold, for $p = 0.5$, 50\% of the time we see a second best secretary we will believe we have not yet seen the best secretary and therefore reject the secretary we are presented. 
+% However, this methods success rate falls off for smaller values of $p$ at a rate that we can show is suboptimal. We can observe this by considering $p = 0.5$ where we know optimal behaviour is to accept any ``second best so far'' secretary we see after the threshold, $n/2$. Despite the algorithm being fit to have the correct threshold, for $p = 0.5$, 50\% of the time we see a second best secretary we will believe we have not yet seen the best secretary and therefore reject the secretary we are presented. 
+
 \begin{algorithm}[H]
 \caption{Deterministic $p = 0.5$ fit}
 \begin{algorithmic}[1]
@@ -478,125 +278,11 @@ However, this methods success rate falls off for smaller values of $p$ at a rate
 \end{algorithmic}
 \end{algorithm}
 
-Similarly Algorithm 2 is a perfect fit for the optimal solution for a value of $p = 0.5$, however has less than optimal behaviour for $p = 1$. With this algorithm, we are unconditionally accepting a second best secretary which reflects the behaviour in the post doc problem, and only accepting a best secretary if they are not predicted to be best.
+% Similarly Algorithm 2 is a perfect fit for the optimal solution for a value of $p = 0.5$, however has less than optimal behaviour for $p = 1$. With this algorithm, we are unconditionally accepting a second best secretary which reflects the behaviour in the post doc problem, and only accepting a best secretary if they are not predicted to be best.
 
-We can observe optimal behaviour at $p = 0.5$ as we will always accept a second best secretary, and will accept a best secretary 50\% of the time. Despite not exactly matching the description of the post doc problem's optimal algorithm, recall that passing on a best secretary has equal win probability to accepting them therefore this algorithm results in an equal success rate despite the seemingly random behaviour.
+% We can observe optimal behaviour at $p = 0.5$ as we will always accept a second best secretary, and will accept a best secretary 50\% of the time. Despite not exactly matching the description of the post doc problem's optimal algorithm, recall that passing on a best secretary has equal win probability to accepting them therefore this algorithm results in an equal success rate despite the seemingly random behaviour.
 
-However, this method has a slower success rate increase for higher values of $p$. This is because there will be situations where we are very confident that we have not seen best candidate already and as such should not accept the second best candidate.
-
-\subsection{Base Confidence Algorithm}
-
-The previous two algorithms do not use the previously calculated chance we have seen the best candidate ($P(S)$) nor the confidence based on that value ($c$). Heuristically, an ideal algorithm should behave as in the Postdoc Problem, that is accept second best candidate, in situations with low confidence, and act more dynamically in situations with high confidence.
-
-To define what qualifies as ``high confidence'' we draw inspiration from the solution to the Secretary problem with Advice as described in Dütting et al. \cite{dütting2020secretariesadvice}. In that solution, after the survey period there is a range where we will only accept candidates predicted to be best, however there later becomes a range where we will accept any secretary that could be best regardless of prediction. 
-
-To produce a similar effect in our confidence thresholds, we will require a higher confidence the more candidates we have seen. This way we can have a fallback for an incorrect prediction, but still play optimally in cases where we have extremely high confidence.
-
-\begin{algorithm}[H]
-\caption{Base Confidence Algorithm}
-\begin{algorithmic}[1]
-\Procedure{PostdocProblem}{Sec, Adv, p}
-
-\State $n = len(Sec)$
-\State $threshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
-
-\State for confidence, $c$, as previously discussed
-
-    \For{$i \ge threshold$}
-        \If{$Sec[i] == secondBest$}
-            \If{$c < i/n$ OR $bestPredictedBest$}
-                \State \Return $Sec[i]$
-            \EndIf
-        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
-            \State \Return $Sec[i]$
-        \EndIf
-    \EndFor
-    \State \Return $Sec[i]$
-\EndProcedure
-\end{algorithmic}
-\end{algorithm}
- 
-This Algorithm combines the behaviour of algorithm 1 and 2 while maintaining known optimal behaviour at the extreme values of p, and having a continuous increase between the points. For low confidence ($c < i/n$) we will take any ``second best'' secretary, however for higher confidence we will only take a second best secretary if we believe the best secretary to already be seen.
-
-\label{assumption1}
-
-Observe that for all algorithms, the behaviour for accepting a ``best'' secretary is unchanged. This behaviour is interpolated from the end points as for both $p = 0.5$ and $p = 1$ this behaviour is optimal making it a safe assumption that it is optimal for the case for value of $p \in (0.5,1)$ as well.
-
-The dual to this statement is that we never accept a candidate that is best so far but not predicted best. Similarly, this behaviour is interpolated from it being true in both $p=0.5$ and $p=1$.
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.80\linewidth]{resources/algorithm1vs2vs3.pdf}
-    \caption{Comparison on success rate of algorithms 1,2, 3, 600 candidates with 5,000,000 tests each. Lines marking $1/4$ and $1/e$ success rate}
-    \label{fig:algorithms123}
-\end{figure}
-
-
-\subsection{Algorithm Simplification}
-\label{assumption2}
-By further analysing algorithm 3, we can observe that we are only utilizing the confidence value in situations where ``\textit{bestPredictedBest}'' is false. 
-
-Additionally, the confidence value for the situation where !\textit{bestPredictedBest} is strictly decreasing. This is because $P(s) < k/n$, only if the best is not predicted best. As $P(s)$ is strictly increasing with respect to $k$, we have the confidence is a decreasing function. 
-
-Therefore, we can conclude that there is an initial range after the survey period where we will reject a second best candidate and it will not return to that behaviour later. As such, if we can devise an appropriate confidence interval for when we should stop rejecting second best candidates in cases where we believe the best candidate has yet to appear, we can state algorithm 3 more simply.
-
-As the confidence interval only begins at the end of the survey period we want a function $f(p):[0.5,1] \rightarrow [0.5,1]$ s.t. $f(0.5) = 0.5 \text{ and } f(1) = 1$ making $f(p) = p$ an obvious initial choice. Through some rudimentary testing we find a quadratic that ends the confidence period slightly earlier produces better results. Using the function $f(p)=\left(a\left(p-1\right)+1\right)\left(p-0.5\right)+0.5$ which is designed to interpolate the points $(0.5,0.5)$ and $(1,1)$ we get:
-
-\begin{table}[H]
-\centering
-\begin{tabular}{c|cccc}
-\hline
-$p$ & a=0 & a=0.5 & a=1.5 & a=2.5 \\
-\hline
-0.50 & 24.9929 & 24.9940 & \textbf{25.0150} & 24.9828 \\
-0.55 & 25.6924 & 25.7070 & \textbf{25.7414} & 25.6817 \\
-0.60 & 26.4340 & \textbf{26.5412} & 26.5203 & 26.4634 \\
-0.65 & 27.3365 & 27.3974 & \textbf{27.5180} & 27.4097 \\
-0.70 & 28.2770 & 28.4085 & \textbf{28.5521} & 28.5090 \\
-0.75 & 29.4083 & 29.4816 & \textbf{29.6567} & 29.6399 \\
-0.80 & 30.5394 & 30.6705 & \textbf{30.8915} & 30.8840 \\
-0.85 & 31.8907 & 32.0541 & 32.1760 & \textbf{32.2728} \\
-0.90 & 33.4248 & 33.4627 & 33.5601 & \textbf{33.5824} \\
-0.95 & 34.9697 & 35.0269 & 35.0969 & \textbf{35.1107} \\
-1.00 & 36.8117 & 36.7668 & 36.7713 & \textbf{36.7987} \\
-\hline
-\end{tabular}
-\caption{Success rates by $p$ and $a$, 600 candidates with 5,000,000 tests each. highest success rate in each row bolded}
-\end{table}
-
-\begin{algorithm}[H]
-\caption{Simplified algorithm}
-\begin{algorithmic}[1]
-\Procedure{PostdocProblem}{Sec, Adv, p}
-
-\State $n = len(Sec)$
-\State $surveyingThreshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
-\State $confidentThreshold = n(\left(1.5\left(p-1\right)+1\right)\left(p-0.5\right)+0.5)$
-\State for confidence, $c$, as previously discussed
-
-    \For{$i \ge surveyinngThreshold$}
-        \If{$Sec[i] == secondBest$}
-            \If{$c > confidentThreshold$ OR $bestPredictedBest$}
-                \State \Return $Sec[i]$
-            \EndIf
-        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
-            \State \Return $Sec[i]$
-        \EndIf
-    \EndFor
-    \State \Return $Sec[i]$
-\EndProcedure
-\end{algorithmic}
-\end{algorithm}
-
-Algorithm 4 has a very similar effect to algorithm 3 with a slight improvement in the early numbers.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{resources/algorithm3vs4.pdf}
-    \caption{Comparison of algorithm 3 and 4, 600 candidates with 5,000,000 tests each}
-    \label{fig:placeholder}
-\end{figure}
-
-We can clearly see an improvement of algorithm 4 over algorithm 3, however it seems to be most noticeable in the low-mid value of p. The value of the threshold can likely be further refined even using statistical tools and trial-and-error. Instead, we will now turn to analytical methods to produce a more cohesive solution.
+% However, this method has a slower success rate increase for higher values of $p$. This is because there will be situations where we are very confident that we have not seen best candidate already and as such should not accept the second best candidate.
 
 \section{Bellman equation solution}
 
