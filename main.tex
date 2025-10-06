@@ -1,0 +1,1593 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+
+
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{float}  
+\usepackage{tabularx}
+\usepackage{booktabs} 
+\usepackage{cite}
+\bibliographystyle{plain}  
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools}
+\usepackage[toc,page]{appendix}
+\usepackage{listings} 
+
+
+
+
+\begin{document}
+
+
+\pagenumbering{roman}
+
+
+
+
+\thispagestyle{empty} 
+
+\begin{center}
+{\LARGE\bf
+Postdoc Problem with Advice}
+
+\bigskip\bigskip
+
+\smallskip
+COMP702 -- M.Sc. project (2024/25)
+
+\vfill
+{\large
+Submitted by}
+
+{\large
+\emph{Alexander Yule}}
+
+{\large
+201860415}
+
+\bigskip\bigskip
+{\large
+under the supervision of}
+
+{\large
+\emph{John Sylvester}}
+
+\vspace{4cm}
+
+{\large\sc
+Department of Computer Science}
+
+\smallskip
+{\large\sc
+University of Liverpool}
+\end{center}
+
+
+
+\setcounter{page}{1} 
+\clearpage \newpage
+
+\thispagestyle{empty}
+\begin{center}
+{\LARGE\bf
+Postdoc Problem with Advice}
+\end{center} 
+\newpage
+\pagenumbering{arabic}
+
+
+
+
+
+\begin{abstract}
+This paper investigates an extension of the ``Secretary problem'', a classic online stopping problem, combining the objective of the ``Postdoc Problem'', to hire the second-best candidate, with the ``Secretary Problem with Advice'', where each candidate is accompanied by a prediction of their quality. We analyse the optimal stopping strategy for a sequence of n candidates, where each has a score and a reference letter that, with known probability p, correctly identifies if they are the single best applicant. Initial analysis was performed using heuristic algorithms tested with a simulation tools written in Python and Kotlin programming languages. In line with solutions to adjacent problems, more rigorous analysis was done with standard Bellman equations, however they proved insufficient to model the state-dependent probabilities introduced by the predictor. Consequently, a two-state Markov equation model is proposed and solved computationally. The results reveal that the optimal strategy is a complex, four-phase threshold algorithm, adding new dimensions upon other extensions of the problem. This analysis fully characterizes the decision thresholds, which vary non-monotonically with predictor accuracy, and validates the model using a custom simulation tool.
+\end{abstract}
+
+
+\clearpage
+
+
+
+
+
+ \section{Statement of Ethical Compliance: Data Category: A0}
+
+I confirm that I will follow the ethical guidance provided by 
+the institution, ensuring the ethical
+treatment of data and participants as per the university’s policy.
+
+\tableofcontents
+
+    
+\section{Introduction}
+
+\subsection{Literature Review of Secretary Problems Variants}
+
+\paragraph{The Secretary Problem} The Secretary Problem is a classic example of an \textit{online stopping problem}, a problem in which there is a continuous stream of input and a decision needs to be made with partial information. In the Secretary Problem, you have the opportunity to interview $n$ candidates for a secretary position who are given a numerical score and need to make an irrevocable decision on whether to hire them or not. The goal is to hire the secretary with the highest score. This problem is called \textit{online} because it involves making a decision at each step of the program, to hire or not hire the current secretary, with only the information you presently have.
+
+This problem has been studied extensively and an optimal algorithm and success rate has been proven in multiple ways. These include, dynamic programming/analytically \cite{bayon2017bestorworstpostdocproblems}, Linear Programming \cite{linearProgramming}, and Statistically\cite{foursidecafe}. The optimal algorithm is composed of two phase, first a survey of the applicants where the first $k < n$ applicants are interviewed and categorically rejected, and a second phase where the next best candidate is immediately selected. Through various methods of analysis the theoretically best position to change phase approaches $n/e$ for a probability of success approaching $1/e$ as n tends to infinity.
+
+The strategy used in this case is called a \textit{threshold strategy} which, as the name suggests, involves phases of the strategy which change at certain thresholds. It can be rigorously proven through brute force and utilization of an assumption of the secretaries being uniformly randomly distributed, that an optimal strategy has to be a threshold strategy \cite{bayon2017bestorworstpostdocproblems}.
+
+\paragraph{The Secretary Problem With Predictors}
+
+A quite natural extension of this problem in the context of real world job applications is that with each applicant in addition to their score, you are given a ``reference letter''. D\"utting Lattanzi, Paes Leme, and Vassilvitskii~\cite{dütting2020secretariesadvice} explores a reference letter that either claims that they are or are not the best candidate in the applicant pool. This predictor is correct with probability $p \in [0.5,1]$. Should values of p less than 0.5 be included, then the signal could simply be reversed to obtain an effective $1-p \in [0.5,1]$ predictor accuracy
+
+This specific variant of the problem has not been studied much however, the analysis provided in D\"utting et al.\cite{dütting2020secretariesadvice} proves an optimal algorithm with success probability: $$P(\text{success}) = \left(\frac{\left(1-p'\right)}{p}\right)^{\frac{1-p' }{p}}\cdot e^{ \frac{p- 1}{p'} }$$ The optimal strategy is similar to the classic problem with the difference being a third phase between the first and second where it will accept the best applicant seen before only if they are also predicted to be best.  
+
+Note that if $p = 1/2$ then the information is useless and the problem is equivalent to the classic Secretary Problem and as $ p $ approaches 1 then the problem is trivial as we are simply told the best candidate. This is reflected by the $P(\text{success}) = 1/e$ and $P(\text{success}) = 1$ in those cases respectively
+
+\paragraph{The Postdoc Problem}
+
+A maybe less natural extension is \textit{The Postdoc Problem}. Initially posed by E.B. Dynkin. The Postdoc Problem has the same setup as the Secretary Problem but with the objective to hire the second best candidate, with the motivation being ``we are confident that the best applicant will receive and accept an offer from Harvard''.
+
+While it may initially seem to be easier to select a lower scoring candidate, the Postdoc Problem actually has a lower success rate with optimal strategy than the classic Secretary Problem as the number of applicants tend to infinity. The reason for this can be heuristically described as, in the Secretary Problem we are only concerned with picking a worse candidate, whereas in the Postdoc Problem it is possible to pick a candidate that is too good as well as too bad.
+
+By using Hamilton-Jacobi-Bellman equations, Vanderbei \cite{vanderbei2011postdoc}, and previously Rose \cite{Rose}, were able to find a prove the optimality of a strategy that approached a 1/4 probability of success as the number of applicants tends to infinity. 
+
+\subsection{Problem Variant Studied In This Paper} 
+
+\paragraph{Postdocs with Advice}
+
+This project will be a discussion of a combination of the two discussed extensions of the Secretary Problem. I will provide analysis of the online problem, the Postdoc Problem with Advice. 
+
+In my problem a known number of applicants, $n$,  each with a score that follows a uniform random distribution that does not allow for draws will sequentially be interviewed. In addition to the score each candidate has, they will also have a reference letter that claims with some known probability $p$ that this applicant is the best candidate in the pool. After each interview an irrevocable decision to hire or not hire them must be made with the interviews ending once a candidate is hired. The only goal of the interview process is to hire the candidate with precisely the second best score.
+
+One potential issue with this analysis is that in the secretary with reference context the reference is providing information about whether the current candidate is the correct choice, with some probability of correctness. However, in the context of the problem discussed in this paper, the information only indirectly pertains to whether the candidate is the second best candidate. An interesting alternative way of information being presented in reference letters studied by Fujii \& Yoshida~\cite{Fujii_2024} is with predictions of all applicants scores being received in the beginning with some maximum distance from truth. 
+
+
+\subsection{Core Aims}
+
+The core aim of this project is to investigate the properties of the \textit{Postdoc Problem with Advice} and its solution. I aim to do this by 
+
+\begin{itemize}
+    \item Devising algorithms that can outline behaviour for the problem.
+    \item Running simulations to test said algorithms.
+    \item Collecting statistically signifiant data from my trials to draw conclusions about my algorithms.
+    \item Base my algorithms on the strategies used in adjacent problems.
+    \item Perform rigorous analysis of the problem from a mathematical lens.
+\end{itemize}
+
+
+\subsection{Structure of The Dissertation}
+
+The dissertation follows my process of coming up with a solution to the problem including early algorithms and unsuccessful attempts of derivations. A wide overview of the paper is:
+
+\begin{itemize}
+    \item Simulation tool details
+    \item Analysis of known solutions and their relation to this one
+    \item Probability calculations needed for the algorithm(s)
+    \item Algorithm design
+    \item Mathematical Analysis
+    \item Conclusion
+\end{itemize}
+
+\section{Simulation Tool Implementation}
+\label{sec:desgin}
+
+As the algorithms I create will be based on heuristic predictions, it is essential that I have a mean by which to test and compare the algorithms I create against one another and verify theoretical results.
+
+\subsection{Tool requirements}
+
+The requirements I need my tool to fulfil are:
+
+\begin{itemize}
+\item Run simulations of the online stopping problem by generating random lists
+\item Have modifiable goals/success conditions to simulate both the secretary and Postdoc Problem
+\item Generate predictions of whether a candidate is best or not with accuracy $p$
+\item Be modifiable and extendible with minimal overhead to allow for ease of testing
+\item Provide useful and readable outputs for analysis
+\item Be correct in-so-far as match known theoretical results
+\item Run efficiently so as to provide signifiant results in reasonable time frames.
+\end{itemize}
+
+\subsection{General Design}
+
+To fulfil my requirements, I opted for an object oriented python simulation with handlers for different aspects of running tests.
+\begin{itemize}
+\item \verb|TestRunner.py| is responsible for generating candidates, running the simulation the specified number of times, and generating the advice. Each run takes in a number of candidates, $n$, if needed, an accuracy $p$, a problem, i.e. Postdoc or Secretary, a number of loops, and an Algorithm to use.
+
+\begin{itemize}
+\item Secretaries are in the form of a list of integers $[0, \dots ,n-1] $that is randomly permuted. Using integers rather than real numbers in a wider range allows for more efficient generation, however requires that our algorithms act blind to the known second best being $n-2$
+\item the advice is generated by taking in the permuted candidates and then if a random number $\in [0,1]$ is less than $p$ the predictor predicts correctly, and incorrectly otherwise.
+\end{itemize}
+
+\item \verb|Algorithms.py| is responsible for hosting the different algorithms that can be used. Algorithms take in just a list of candidates and optionally a list of predictions and the predictor accuracy. Later algorithms take in an \verb|algNo| to reuse shared operations, such as dynamic updating of the best/second best candidate, and only change behaviour at the return stage.
+
+\begin{itemize}
+\item Algorithms also independently handle calculation of values need for deicide making such as the probability we have seen the best candidate at a given index $k$. It also makes decisions about thresholds, and return behaviour 
+\item for most calculations \verb|numpy| was used for more efficient operations, exponentiating and the value of $e$
+\end{itemize}
+
+\item \verb|main.py| handles the calling of each the test runner, the specification of the algorithm and problem, and the output of the results in a readable format.
+
+\begin{itemize}
+\item As the test runner simply returns the number of successful tests, we are required to calculate the success rate and print information about the trials to the terminal
+\item \verb|matplotlib.pyplot| is used to generate graphs of results to verify expectations.
+\end{itemize}
+\end{itemize}
+
+\subsection{Tool Testing and Examples}
+\label{sec:testingandexamples}
+
+The first usages of my tool was to verify the results of problems adjacent to my own that have been solved. This serves to both validate my tool is working as intended, and to verify first-hand the results on which I will be basing my future work on.
+\paragraph{Secretary Problem results}
+Secretary problem would expect a success rate of $1/e \approx36.788\%$
+\begin{verbatim}
+Running 50000 tests on 200 candidates for secretary problem
+success rate = 36.838%
+\end{verbatim}
+
+\paragraph{Postdoc Problem results}
+Postdoc Problem would expect a success rate of $1/4 = 25.0\%$
+\begin{verbatim}
+Running 50000 tests on 200 candidates for Postdoc Problem
+success rate = 25.032%
+\end{verbatim}
+
+\paragraph{Secretary problem with Advice results}
+In the Secretary problem with Advice with optimal play you would expect a success rate to begin at $1/e$ and approach $1$ as $p$ varies from $0.5\text{ to }1$. We can show this result with a graph comparing the predictor accuracy with overall success rate
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{resources/secretarieswithadvice.png}
+    \caption{Secretary problem with Advice. Ran 50,000 trials with 200 candidates each for each value of p.}
+    \label{fig:ProblemWithAdvice}
+\end{figure}
+
+\subsection{Implementation details and limitations}
+
+All simulations were performed on the following hardware:
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Model:} & MacBook Pro \\
+\textbf{Processor:} & Apple M3 Pro \\
+\textbf{Cores:} & 11 (5 performance, 6 efficiency) \\
+\textbf{Memory:} & 36 GB
+\end{tabular}
+\end{center}
+
+While the simple python script was sufficient for validation of known solutions, for fine tuning algorithms the tool lacks the efficiency needed. For later algorithms there are often differences that are small enough that larger numbers of candidates and trials are required for statistically signifiant differences to be seen. The example computations of 200 candidates and 50,000 loops runs in about 25 seconds however when comparing multiple algorithms for multiple predictor accuracies, the computation time begins to increase.
+
+\paragraph{Parallel computation}
+
+One solution was to use parallel computation to run multiple tests at once instead of sequentially. This was accomplished using the \verb|concurrent.futures.py| package. Simply putting the requests into an executor reduced the run time of 100,000 trials with 200 candidate from 45 seconds to 25 seconds.
+
+While there is a marginal improvement, the parallel computing with python is not achieving sufficient results. We will need tests in the range of tens or hundreds of millions for signifiant results which would take too long to efficiently simulate using python. 
+\paragraph{Kotlin tool}
+To meet my computational needs, in addition to a simulation tool in python that is more fleshed out and useable, I have also created a more efficient tool using the Kotlin programming language. Kotlin is a JVM (Java Virtual Machine) compiled language meaning it offers a signifiant computational power improvement over a run-time interpreted language like python. Additionally, Kotlin has built in functions that allow for easier list operations making it an ideal choice for this use case.\cite{NathanFallet_Gildor_2025}
+
+The Kotlin tool is very similar to the python one in setup, however is only configured to run simulations of the Postdoc Problem with Advice, and is less customisable.
+
+The drawbacks of using a tool written in Kotlin are longer startup times and much more limited data display tools. However, the benefit of moving away from python is a large increase in test efficiency.
+
+While running the same test of 50,000 trials on 200 candidates only resulted in an improvement to 15 seconds, this is largely due to compilation overhead. For larger batches the kotlin tool works much more efficiently being able to running 20,000,000 trials of 200 candidates in 55 seconds.
+
+The kotlin tool is limited to text output, however this data can be pasted directly into python to create more readable plots.
+\begin{table}[H]
+\begin{tabular}{|p{0.23\linewidth}|p{0.23\linewidth}|p{0.12\linewidth}|p{0.12\linewidth}|p{0.12\linewidth}|}
+
+\hline
+Number of Trials & Number of Candidates & Base Python & Parallel Python & Kotlin\\
+\hline
+50,000 &200& 26s & 23s & 15s\\
+\hline
+50,000 & 2000 & 3m2s & 2m54s & 19s\\
+\hline
+500,000 &200& 4m58s & 3m17s & 20s\\
+\hline
+20,000,000& 200 & 5hrs* & 1.5hrs* & 55s\\
+\hline
+100,000,000& 600 & 75hrs* & 22.5hrs* & 8m17s\\
+\hline
+\end{tabular}
+\label{table:1}
+\caption{Time taken for given values and number of trials. Starred values are approximated by running the tests for an hour and extrapolating.}
+\end{table}
+
+\section{Project Ethics}
+
+This project was of a theoretical nature and there were no human participants. All data used was randomly and procedurally generated and calculated. 
+
+While the interviewing of 120,000,000,000 postdoc applicants may raise ethical considerations we can use a computer program to simulate the hiring process removing any such concerns.
+
+\section{Analysis of Adjacent Problems}
+\label{sec:synthesis}
+
+\subsection{Secretary Problem}
+
+While the Secretary Problem is, at its core, relatively simple, the derivation for the optimal behaviour provides insights into the techniques for more complicated extensions.
+
+See Appendix \ref{sec:AppendixA} for a full analytical derivation of the solution to the Secretary Problem.
+
+\subsection{Postdoc Problem}
+
+The optimal behaviour for the Postdoc Problem was derived in Vanderbei \cite{vanderbei2011postdoc}. The strategy can be simply described as, after passing for surveying threshold $n/2$, take the first ``second best'' candidate that is shown.
+
+However, in the solved equations it was shown that for $k > n/2$ the the value function coincides with the success rate of a ``best so far candidate''. This means if candidate $k$ is best so far, the success rate of passing to candidate $k+1$ is precisely equal to accepting candidate $k$.
+
+Therefore, while the aforementioned strategy is optimal, it is equivalently optimal for an algorithm to accept or reject best so far candidates randomly so long as second best so far candidates are accepted.
+
+\subsection{Secretary Problem with Advice}
+
+The variation of the problem with predictors not only increase the complexity, but adds another dimension of problems that vary with $p \in [0.5,1]$. The main learning from the Secretary problem with Advice is the specification of the thresholds and how they vary with p. It was discovered in D\"utting et al. \cite{dütting2020secretariesadvice} that the optimal strategy involves two thresholds creating 3 regions of behaviour. For thresholds $t_Y$ and $t_N$ optimal play is: survey for candidates before $t_Y$, only accept a candidate if they are best and predicted best between $t_Y \text{ and } t_N$, and accept any best so far candidate after $t_N$. The calculated values for the functions are:
+
+$$
+t_Y = \left(\frac{1}{p}-1\right)^{(1/p)}e^{\left(1-1/p\right)} \hspace{4em} t_N = e^{\left(1-1/p\right)}
+$$
+
+with expected end point behaviour of 
+$$
+t_Y(0.5)= t_N(0.5)= 1/e \hspace{4em} t_Y(1) = 0  \hspace{4em} t_N(1) = 1
+$$
+
+
+
+\section{Probability Analysis and Problem Setup}
+
+An important note about this problem is that for a value of $p = 1$ and large values of n this problem immediately reduces to the Secretary Problem. This is because we are certain that we have not seen the best candidate until we are told a candidate is best and therefore we can simply discard that candidate when arrived upon. We can rephrase the problem as ``the search for the best candidate we don't have perfect information about''.
+
+As discussed, with no predictor picking the best seen candidate can only have probability equal to the probability of passing and simply waiting for the 2nd best seen candidate. We can use the information provided by the reference letter to justify picking the best seen candidate is a situation where the prediction of them not being best makes us more confident that they are truly the second best overall.
+
+For example, if we have $p = 1$ then we may pick a ``best so far'' candidate if we have not seen the true best candidate as we know that they are guaranteed to moved to at least second place.
+
+\subsection{Probability Best Has Been Seen}
+
+When making decisions we care about how certain we are that we have already seen the best candidate. This depends on 3 factors:
+\begin{itemize}
+\item The number of candidates we have seen
+\item The total number of candidates
+\item Whether the best candidate we have seen is predicted to be best (with probability of accuracy p)
+\end{itemize}
+
+Some considerations before doing analysis on probability are: 
+
+\begin{itemize}
+\item for $p = 1$ we are certain we have not seen the best candidate until we have the predicted best candidate. 
+\item for $k = n$ we are certain we have seen the best candidate regardless of p
+\item As our information is in the form of a binary classifier, we may have sharp changes in strategy. Using the $p =1$ example from earlier, before seeing the best candidate we are will only take the best so far candidate, however immediately after seeing the best candidate we will only take the second best so far candidate.
+\end{itemize}
+
+We define the following events:
+
+Let $R_k = R = \text{The best candidate up to and including k is predicted to be best}$ 
+
+Let $S_k = S= \text{The best candidate up to and including k is the true best candidate}$ \\
+$$
+P(S) = \begin{cases}
+   P(S \mid R) & R\\
+  P(S \mid R^c) & R^c\\
+\end{cases}
+$$
+
+
+$$
+P(S\cap R) = P(R \mid S)P(S) = p \cdot \frac{k}{n} 
+$$
+$$
+P(R) = P(S\cap R) + P(S\cap R^c) = p\frac{k}{n} + P(R\mid S^c)P(S^c) = p\frac{k}{n} +\left(1-p\right)\left(1-\frac{k}{n}\right)
+$$
+$$
+P(S\cap R^c) = P(R^c \mid S)P(S) = (1-p)\frac{k}{n} 
+$$
+
+Therefore,
+$$
+P(S \mid R) = \frac{P(S\cap R)}{P(R)} = \frac{pk}{n} \cdot \frac{1}{\frac{pk}{n}+(1-p)\left(1-\frac{k}{n}\right)}
+$$
+
+$$
+P(S \mid R^c) = \frac{P(S\cap R^c)}{P(R^c)} = \frac{(1-p)k}{n}\frac{1}{1-(\frac{pk}{n}+(1-p)(1-\frac{k}{n}))}
+$$
+
+\subsection{Confidence Calculation}
+\label{sec:novelAppraoch}
+
+As referenced in previous sections, if we are fairly sure we have not seen the best candidate we will be more inclined to take a best candidate as we can expect this candidate to fall to second.
+
+While the probability that the best candidate has been seen is useful, it is sometimes a misleading statistic. This is because after seeing a majority of candidates, we may have a high probability of the best candidate being seen, but this would be the case even with no predictor ($p = 0.5$). As we know optimal behaviour for the question with no predictor we would like to fit our general solution to this known point.
+
+As such we introduce a new value, \textit{confidence} $ = c\in [0,1]$ which represents a scaled value of the probability we have seen the best candidate based on what we would expect given the number of candidate we have already seen. In the case with no predictor, after seeing $k$ candidates out of $n$ total applicants we have a $k/n$ chance of having seen the best candidate.
+
+For the confidence we require a function $f(P(s)): [0,1] \rightarrow [0,1] \text{ such that}$
+\begin{align}
+f\left(\frac{k}{n}\right) &= 0 \quad\\
+f(0) &= 1\\
+f(1) &= 1
+\end{align}
+
+For example, a function that scales linearly is given by:
+
+$$
+\text{confidence} = c = \begin{cases}
+   \dfrac{P(s) - k/n}{1 - k/n} & P(s) \ge k/n\\[8pt]
+  1- P(s)\frac{n}{k} & P(s) < k/n\\
+\end{cases}
+$$
+
+With a perfect predictor we have a probability of $0$ before seeing the best candidate and a probability of $1$ afterwards, and as discussed with no predictor we always have a probability of $k/n$.
+
+As such, the confidence value for $P(s) \ge k/n$ represents the percentile that $P(s)$ is between $k/n$ and $1$. For values of $P(s) < k/n$ the confidence value is equal to the percentile that $P(s)$ is between $0$ and $k/n$ with confidence $= 1$ for $P(S) =1$ or $0$. Similarly confidence $= 0$ for probability $P(S) = k/n$ after seeing k candidates.
+
+\subsection{Surveying Threshold}
+
+Like the related problems, we will likely have an initial interval where we are only viewing candidates and not accepting under any condition.
+
+Using $p = 0.5$ is equivalent to the Postdoc Problem, and $p = 1 $ is equivalent to the Secretary Problem with stopping points, $n/2$ and $n/e$ respectively. We can conclude that for values of $p$ between 0.5 and 1, we must have a threshold at some point between these values.
+
+For example, a simple linear scale is given by:
+
+$$
+\text{Threshold} = f(p) = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)
+$$
+
+\section{Algorithm Design}
+\label{sec:design}
+\subsection{Simple Fit Algorithms}
+
+Utilizing the known behaviour of algorithms at the end points of $p = 0.5$ and $p = 1$ we can create algorithms to match those cases respectively. Using dynamic updating of the best and second best with a linear scaling of the surveying threshold we have algorithms 1 \& 2: \\
+
+\begin{algorithm}[H]
+\caption{Deterministic p = 1 fit}
+\begin{algorithmic}[1]
+\Procedure{PostdocProblem}{Sec, Adv, p}
+
+\State $n = len(Sec)$
+\State $threshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
+
+    \For{$i \ge threshold$}
+        \If{$Sec[i] == secondBest$ AND $bestPredictedBest$}
+            \State \Return $Sec[i]$
+        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
+            \State \Return $Sec[i]$
+        \EndIf
+    \EndFor
+    \State \Return $Sec[i]$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm} 
+
+
+As suggested by the name, this algorithm is a perfect fit for the optimal solution when $p = 1$, however has less than optimal behaviour for values of $p$ less than 1. With this algorithm we are fully trusting the prediction of the ``best so far'' secretary by accepting a second best secretary if we are told that we have the best already and only accepting a best secretary if we are told we do not have a best secretary.
+
+We can observe the optimal behaviour at $p = 1 $ by comparing this algorithm to the Secretary Problem algorithm and noticing that it shares a threshold of $n/e$ and will accept the second best candidate knowing the best is either yet to come, or has already been interviewed.
+
+However, this methods success rate falls off for smaller values of $p$ at a rate that we can show is suboptimal. We can observe this by considering $p = 0.5$ where we know optimal behaviour is to accept any ``second best so far'' secretary we see after the threshold, $n/2$. Despite the algorithm being fit to have the correct threshold, for $p = 0.5$, 50\% of the time we see a second best secretary we will believe we have not yet seen the best secretary and therefore reject the secretary we are presented. 
+\begin{algorithm}[H]
+\caption{Deterministic $p = 0.5$ fit}
+\begin{algorithmic}[1]
+\Procedure{PostdocProblem}{Sec, Adv, p}
+
+\State $n = len(Sec)$
+\State $threshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
+
+    \For{$i \ge threshold$}
+        \If{$Sec[i] == secondBest$}
+            \State \Return $Sec[i]$
+        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
+            \State \Return $Sec[i]$
+        \EndIf
+    \EndFor
+    \State \Return $Sec[i]$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Similarly Algorithm 2 is a perfect fit for the optimal solution for a value of $p = 0.5$, however has less than optimal behaviour for $p = 1$. With this algorithm, we are unconditionally accepting a second best secretary which reflects the behaviour in the post doc problem, and only accepting a best secretary if they are not predicted to be best.
+
+We can observe optimal behaviour at $p = 0.5$ as we will always accept a second best secretary, and will accept a best secretary 50\% of the time. Despite not exactly matching the description of the post doc problem's optimal algorithm, recall that passing on a best secretary has equal win probability to accepting them therefore this algorithm results in an equal success rate despite the seemingly random behaviour.
+
+However, this method has a slower success rate increase for higher values of $p$. This is because there will be situations where we are very confident that we have not seen best candidate already and as such should not accept the second best candidate.
+
+\subsection{Base Confidence Algorithm}
+
+The previous two algorithms do not use the previously calculated chance we have seen the best candidate ($P(S)$) nor the confidence based on that value ($c$). Heuristically, an ideal algorithm should behave as in the Postdoc Problem, that is accept second best candidate, in situations with low confidence, and act more dynamically in situations with high confidence.
+
+To define what qualifies as ``high confidence'' we draw inspiration from the solution to the Secretary problem with Advice as described in Dütting et al. \cite{dütting2020secretariesadvice}. In that solution, after the survey period there is a range where we will only accept candidates predicted to be best, however there later becomes a range where we will accept any secretary that could be best regardless of prediction. 
+
+To produce a similar effect in our confidence thresholds, we will require a higher confidence the more candidates we have seen. This way we can have a fallback for an incorrect prediction, but still play optimally in cases where we have extremely high confidence.
+
+\begin{algorithm}[H]
+\caption{Base Confidence Algorithm}
+\begin{algorithmic}[1]
+\Procedure{PostdocProblem}{Sec, Adv, p}
+
+\State $n = len(Sec)$
+\State $threshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
+
+\State for confidence, $c$, as previously discussed
+
+    \For{$i \ge threshold$}
+        \If{$Sec[i] == secondBest$}
+            \If{$c < i/n$ OR $bestPredictedBest$}
+                \State \Return $Sec[i]$
+            \EndIf
+        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
+            \State \Return $Sec[i]$
+        \EndIf
+    \EndFor
+    \State \Return $Sec[i]$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+ 
+This Algorithm combines the behaviour of algorithm 1 and 2 while maintaining known optimal behaviour at the extreme values of p, and having a continuous increase between the points. For low confidence ($c < i/n$) we will take any ``second best'' secretary, however for higher confidence we will only take a second best secretary if we believe the best secretary to already be seen.
+
+\label{assumption1}
+
+Observe that for all algorithms, the behaviour for accepting a ``best'' secretary is unchanged. This behaviour is interpolated from the end points as for both $p = 0.5$ and $p = 1$ this behaviour is optimal making it a safe assumption that it is optimal for the case for value of $p \in (0.5,1)$ as well.
+
+The dual to this statement is that we never accept a candidate that is best so far but not predicted best. Similarly, this behaviour is interpolated from it being true in both $p=0.5$ and $p=1$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.80\linewidth]{resources/algorithm1vs2vs3.pdf}
+    \caption{Comparison on success rate of algorithms 1,2, 3, 600 candidates with 5,000,000 tests each. Lines marking $1/4$ and $1/e$ success rate}
+    \label{fig:algorithms123}
+\end{figure}
+
+
+\subsection{Algorithm Simplification}
+\label{assumption2}
+By further analysing algorithm 3, we can observe that we are only utilizing the confidence value in situations where ``\textit{bestPredictedBest}'' is false. 
+
+Additionally, the confidence value for the situation where !\textit{bestPredictedBest} is strictly decreasing. This is because $P(s) < k/n$, only if the best is not predicted best. As $P(s)$ is strictly increasing with respect to $k$, we have the confidence is a decreasing function. 
+
+Therefore, we can conclude that there is an initial range after the survey period where we will reject a second best candidate and it will not return to that behaviour later. As such, if we can devise an appropriate confidence interval for when we should stop rejecting second best candidates in cases where we believe the best candidate has yet to appear, we can state algorithm 3 more simply.
+
+As the confidence interval only begins at the end of the survey period we want a function $f(p):[0.5,1] \rightarrow [0.5,1]$ s.t. $f(0.5) = 0.5 \text{ and } f(1) = 1$ making $f(p) = p$ an obvious initial choice. Through some rudimentary testing we find a quadratic that ends the confidence period slightly earlier produces better results. Using the function $f(p)=\left(a\left(p-1\right)+1\right)\left(p-0.5\right)+0.5$ which is designed to interpolate the points $(0.5,0.5)$ and $(1,1)$ we get:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|cccc}
+\hline
+$p$ & a=0 & a=0.5 & a=1.5 & a=2.5 \\
+\hline
+0.50 & 24.9929 & 24.9940 & \textbf{25.0150} & 24.9828 \\
+0.55 & 25.6924 & 25.7070 & \textbf{25.7414} & 25.6817 \\
+0.60 & 26.4340 & \textbf{26.5412} & 26.5203 & 26.4634 \\
+0.65 & 27.3365 & 27.3974 & \textbf{27.5180} & 27.4097 \\
+0.70 & 28.2770 & 28.4085 & \textbf{28.5521} & 28.5090 \\
+0.75 & 29.4083 & 29.4816 & \textbf{29.6567} & 29.6399 \\
+0.80 & 30.5394 & 30.6705 & \textbf{30.8915} & 30.8840 \\
+0.85 & 31.8907 & 32.0541 & 32.1760 & \textbf{32.2728} \\
+0.90 & 33.4248 & 33.4627 & 33.5601 & \textbf{33.5824} \\
+0.95 & 34.9697 & 35.0269 & 35.0969 & \textbf{35.1107} \\
+1.00 & 36.8117 & 36.7668 & 36.7713 & \textbf{36.7987} \\
+\hline
+\end{tabular}
+\caption{Success rates by $p$ and $a$, 600 candidates with 5,000,000 tests each. highest success rate in each row bolded}
+\end{table}
+
+\begin{algorithm}[H]
+\caption{Simplified algorithm}
+\begin{algorithmic}[1]
+\Procedure{PostdocProblem}{Sec, Adv, p}
+
+\State $n = len(Sec)$
+\State $surveyingThreshold = n/2 + 2 \cdot (p-0.5) \cdot (n/e - n/2)$
+\State $confidentThreshold = n(\left(1.5\left(p-1\right)+1\right)\left(p-0.5\right)+0.5)$
+\State for confidence, $c$, as previously discussed
+
+    \For{$i \ge surveyinngThreshold$}
+        \If{$Sec[i] == secondBest$}
+            \If{$c > confidentThreshold$ OR $bestPredictedBest$}
+                \State \Return $Sec[i]$
+            \EndIf
+        \ElsIf{$Sec[i] == best$ AND $!bestPredictedBest$}
+            \State \Return $Sec[i]$
+        \EndIf
+    \EndFor
+    \State \Return $Sec[i]$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm 4 has a very similar effect to algorithm 3 with a slight improvement in the early numbers.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{resources/algorithm3vs4.pdf}
+    \caption{Comparison of algorithm 3 and 4, 600 candidates with 5,000,000 tests each}
+    \label{fig:placeholder}
+\end{figure}
+
+We can clearly see an improvement of algorithm 4 over algorithm 3, however it seems to be most noticeable in the low-mid value of p. The value of the threshold can likely be further refined even using statistical tools and trial-and-error. Instead, we will now turn to analytical methods to produce a more cohesive solution.
+
+\section{Bellman equation solution}
+
+To calculate the success rate of one of our algorithms we can use Hamilton-Bellman-Jacobi equation that model probability. The algorithm we will begin with is Algorithm 2. \cite{Dreyfus_2002}
+
+We use Algorithm 2 as it guarantees an improvement on win rate using the predictions and is simpler than Algorithm 1 and 3 as it has less logic decision points.
+
+In Vanderbei \cite{vanderbei2011postdoc} bellman equations are calculated for the Postdoc Problem with predictions. We will reuse some derived probability values and notation here.\\
+
+Let $M_k$ represent the event that a candidate is the second best
+
+Let $T_k$ represent the event that a candidate is the best
+
+Let $S_k$ represent the event that a candidate is the second best seen so far
+
+Let $B_k$ represent the event that a candidate is the best seen so far
+
+Let $O_k$ represent the event that a candidate is anything else
+
+Let $\mathcal{P}_k$ represent the event that a candidate is predicted to be best\\ \\
+For readability let $g_k = P(M_k|S_k)$ and let $f_k = P(M_k| B_k\cap \mathcal{P}^c_k )$ and let $f_k' = P(M_k|B_k\cap \mathcal{P}_k )$ 
+
+Finally, Let $v_k$ represent the probability that if we pass on a candidate that we will, with play following our algorithm, pick the second best candidate.
+
+Using these values and probabilities of each event we can produce the bellman equation as follows
+
+$$
+v_k = \begin{cases}
+  v_{k+1} & k = 0\\
+\begin{aligned}
+v_{k+1} &= P(O_{k+1}) v_{k+1} \\
+      &\quad + P(S_{k+1})\max\left(v_{k+1},g_{k+1}\right) \\
+      &\quad + P(B_{k+1} \cap \mathcal{P}_{k+1}^c)\max\left(v_{k+1},f_{k+1}\right) \\
+      &\quad + P(B_{k+1} \cap \mathcal{P}_{k+1})\max\left(v_{k+1},f'_{k+1}\right)
+\end{aligned} & 1\le k < n\\
+ 0 & k = n
+\end{cases}
+$$
+
+\subsection{Probability Calculations}
+
+To solve the bellman equation we will need to calculate the value of the probability of the events.
+
+$P(\neg(M_{k+1}\cup S_k))$ is simply the probability that the next candidate is neither the best nor second best we have seen and is therefore $\frac{k-1}{k+1}$
+
+Similarly, $P(S_{k+1})$ is $\frac{1}{k+1}$
+
+In Vanderbei the value of $g_{k+1}$ is calculated to be $\frac{k(k+1)}{n(n-1)}$
+
+We can calculate $P(B_{k+1} \cap \mathcal{P}_{k+1})$ by:
+
+$$
+P(B_k \cap \mathcal{P}_k) = P(B_k \cap \mathcal{P}_k \cap T_k) + P(B_k \cap \mathcal{P}_k \cap T_k^c) = \frac{p}{n} + (1-p)P(B_k \cap T_k^c)
+$$
+$$
+=\frac{p}{n} + (1-p)P(T_k^c|B_k)P(B_k) = \frac{p}{n} + (1-p)(\frac{1}{k}-\frac{1}{n}) = \frac{1-p}{k} + \frac{2p-1}{n}
+$$ 
+
+Similarly, 
+$$
+P(B_{k} \cap \mathcal{P}_{k}^c) = \frac{p}{k} - \frac{2p-1}{n} 
+$$
+
+We calculate $f_k = P(M_k \mid B_k\cap \mathcal{P}^c_k )$
+
+$$
+P(M_k| B_k\cap \mathcal{P}^c_k ) = \frac{P(M_k\cap B_k\cap \mathcal{P}^c_k )}{P(B_k\cap \mathcal{P}^c_k)} = \frac{p \cdot P(M_k\cap B_k )}{P(B_k\cap \mathcal{P}^c_k)}
+$$
+
+The denominator we have previously calculated and will later cancel out. The numerator is simply the probability that any candidate will be ``best so far'' and end up being the second best candidate. This has been calculated in Vanderbei to be $\frac{n-k}{n(n-1)}$ Therefore:
+
+$$
+f_k=P(M_k| B_k\cap \mathcal{P}^c_k ) = \frac{p\frac{n-k}{n(n-1)}}{P(B_k\cap \mathcal{P}^c_k)}
+$$.
+
+Finally, the value of $f_k'$ is not needed as our algorithm will never select a best so far candidate that is predicted to be best, however for completion its value is $\frac{(p-1)\frac{n-k}{n(n-1)}}{P(B_k\cap \mathcal{P}^c)}$
+\subsection{Evaluating the Bellman Equation}
+\label{sec:ninetwo}
+Firstly, we will modify the bellman equation to match the behaviour of Algorithm 2. Our assumptions are:
+\begin{itemize}
+    \item for some value, $k_0$, $k < {k_0} \implies f_k, f_k', g_k < v_k$; i.e. The survey period.
+    \item $k \ge k_0 \implies f_k, g_k \ge v_k$; i.e. We always accept best predicted not best or second best.
+    \item $\forall k, f'_k<v_k$; i.e. We always reject best predicted best.
+\end{itemize}
+
+Note that the unconditional acceptance of a 2nd best candidate is known to be increasingly sub-optimal as values of p increase however this simplification is made for the solvability of the equation. These assumptions give an updated equation:
+
+$$
+v_k = \begin{cases}
+  v_{k+1} & k = 0\\
+\begin{aligned}
+v_{k+1} &= P(O_{k+1}) v_{k+1} \\
+      &\quad + P(S_{k+1})g_{k+1} \\
+      &\quad + P(B_{k+1} \cap \mathcal{P}_{k+1}^c)f_{k+1} \\
+      &\quad + P(B_{k+1} \cap \mathcal{P}_{k+1})v_{k+1}
+\end{aligned} & 1\le k < n\\
+ 0 & k = n
+\end{cases}
+$$
+
+Substituting in the known values in the main equation we have for $k> k_0$
+
+$$
+v_k=\left(\frac{k-1}{k+1} + (\frac{p}{k+1} - \frac{2p-1}{n})\right)v_{k+1} + \frac{1}{k+1}\frac{k(k+1)}{n(n-1)} + P(B_{k+1} \cap \mathcal{P}_{k+1})\frac{p\frac{n-k-1}{n(n-1)}}{P(B_{k+1}\cap \mathcal{P}^c_{k+1})}
+$$
+
+$$
+=\left(\frac{k-1}{k+1} + (\frac{p}{k+1} - \frac{2p-1}{n})\right)v_{k+1} + \frac{1}{n(n-1)}(k + p(n-k-1))
+$$
+
+For readability let $a_k = \frac{k-1}{k+1} + (\frac{p}{k+1} - \frac{2p-1}{n})$ and let $b_k = \frac{1}{n(n-1)}(k + p(n-k-1))$. This gives us
+$v_k = a_kv_{k+1} + b_k$
+
+$$
+v_k-a_k\cdot v_{k+1} = b_k \implies v_k\prod_{i=k_0}^{k-1}a_i - a_k\cdot v_{k+1}\prod_{i=k_0}^{k-1}a_i = b_k\prod_{i=k_0}^{k-1}a_i\implies v_k\prod_{i=k_0}^{k-1}a_i - v_{k+1}\prod_{i=k_0}^{k}a_i = b_k\prod_{i=k_0}^{k-1}a_i
+$$
+
+Once again, for readability let 
+
+$$A_k = v_k\prod_{i=k_0}^{k-1}a_i  \quad \text{making our equation } \quad A_k+A_{k+1} = b_k\prod_{i=k_0}^{k-1}a_i$$
+
+Using our known endpoints of  $v_n = 0 \implies a_n = 0 \implies A_n = 0$ and $A_{k_0} = v_{k_0}\prod_{i=k_0}^{k_0-1}a_i = v_{k_0}$
+
+$$
+\sum_{h=k_0}^{n}(A_k - A_{k+1}) = \sum_{h=k_0}^{n}\left(b_h\prod_{i=k_0}^{h-1}a_i\right)
+$$
+$$
+A_{k_0} - A_n = \sum_{h=k_0}^{n}\left(b_h\prod_{i=k_0}^{h-1}a_i\right)
+$$
+$$
+A_{k_0} = \sum_{h=k_0}^{n}\left(b_h\prod_{i=k_0}^{h-1}a_i\right)
+$$
+$$
+v_{k_0} = \frac{1}{n(n-1)}\sum_{h=k_0}^{n}\left((h + p(n-h-1))\prod_{i=k_0}^{h-1}\left(\frac{i-1}{i+1} + \frac{p}{i+1} - \frac{2p-1}{n}\right)\right)
+$$
+
+Unfortunately, as geometric progressions of the form $\prod_{i=0}^{n}(i +x)$ for some constant x do not have closed forms, we cannot find a general function for this equation. However, we can solve this equation using a computer program to to approximate the success rate for algorithm 2 at varying values of $n$, $p$, and $k_0$.
+\begin{figure}[h]
+\begin{tabular}{ll}
+\centering
+\includegraphics[scale=0.30]{resources/SucessRate.png}
+&
+\includegraphics[scale=0.30]{resources/SurveyPeriod.png}
+\end{tabular}
+\caption{Success rate and optimal survey period vs predictor accuracy using the equations}
+\label{Fig:Race}
+\end{figure}
+
+
+\subsection{Bellman Equation Limitation}
+\label{sec:limitations}
+
+While the result of evaluation of the bellman equation are compelling, when comparing to the tested results using the simulation tool, there is a noticeable discrepancy for larger p values in the calculated versus tested results. For a predictor of $p = 1.0$ using these equations an optimal success rate is calculated to be $0.4704$, which is already alarming as we know it to be approximately $0.3679$. The calculated success rate for these values is  $0.3075$ while the experimental success rate is approximately $31.289$. The latter value is calculated running $5,000,000$ simulations with $n=400$ candidates.
+
+However, for smaller p values the predicted accuracies are closer to the experimental results. For $p=0.75$ we have a calculated $27.814$ success rate and an experimental success rate of $28.318$. Additionally, using the known theoretical success rate of $0.25$ at $p=0.5$ for this algorithm we can compare to the calculated value of $0.250013$. The discrepancy is only due to the $0.25$ assuming large n, however as n tends to infinity, my calculation tends to $0.25$.
+
+While the calculated difference is not too large, it is telling there is a flaw with the analysis. Indeed, the bellman equations are limited in their ability update probability calculations based on new information. In this case, there is a key flaw in the values for the probability that the next candidate will be best so far, and predicted best/not best, given by: 
+$$
+P(B_{k} \cap \mathcal{P}_{k}^c) = \frac{p}{k} - \frac{2p-1}{n} \quad \text{and} \quad P(B_{k} \cap \mathcal{P}_{k})=\frac{1-p}{k} + \frac{2p-1}{n}
+$$
+This is because these values depend on the state of the best candidate we have seen so far and whether they are predicted best. This error is larger for higher values of p and vanishes entirely for $p = 0.5$.
+
+We can observe this by considering $p=1.0$. As we know that exactly one candidate is predicted best in the set, we know that $P(B_{k} \cap \mathcal{P}_{k}) = 0$ for all k after observing the predicted best candidate. Similarly, if we have observed all but one candidates without seeing the predicted best candidate we are certain that the next candidate will be the best candidate.
+
+To accurately calculate these values we would require equations with two states, one for when our best-so-far candidate is predicted best and one for when they are not predicted best. In these cases we could incorporate the probability we have seen the best candidate into our calculations for a more accurate predictor.
+
+\section{Simple algorithm guarantee}
+
+While using these methods we cannot explicitly calculate the probability of success given a value for p, we can still guarantee an improvement over the case with no predictor. By considering the cases where we accept and reject candidates and the behaviour of the different algorithms we can show that our success rate is greater than or equal to the base case.
+
+As was shown in Vanderbei \cite{vanderbei2011postdoc}, the optimal behaviour for the Postdoc Problem is to accept any second best candidate after surveying the first $n/2$ candidates. I claim that algorithm 2 has a greater or equal probability of selecting the best candidate than the naive algorithm. Recall that Algorithm 2 will accept any second best so far candidate and will only accept a best so far candidate if they are not predicted to be best. 
+
+Upon seeing a second best candidate both algorithms will unconditionally accept said candidate leaving no room for differences, both taking a success rate of $g_k = \frac{k(k-1)}{n(n-1)}$. Upon seeing a best so far candidate, the naive algorithm will unconditionally reject this candidate. However, algorithm 2 will reject such a candidate if they are predicted best and accept them if they are not predicted best. The success rate of the naive algorithm passing on any given candidate as calculated in Vanderbei is $v_k = \frac{k(n-k)}{n(n-1)}$
+
+In the case where a candidate is predicted best, both algorithms reject and therefore are equal. When a candidate is not predicted best, as previously calculated there is a success rate of:
+$$
+f_k=P(M_k| B_k\cap \mathcal{P}^c_k ) = \frac{p\frac{n-k}{n(n-1)}}{\frac{p}{k} - \frac{2p-1}{n}}
+$$
+My initial claim is therefore equivalent to, for all values of p $v_k \le f_k$ 
+$$
+\frac{k(n-k)}{n(n-1)} \le p\frac{n-k}{n(n-1)}\cdot\frac{kn}{np-(2p-1)k} 
+$$
+$$
+\frac{k(n-k)}{n(n-1)} \le p\frac{k(n-k)}{n(n-1)}\cdot\frac{n}{np-(2p-1)k} 
+$$
+$$
+1\le \frac{np}{np-(2p-1)k}  \implies np-(2p-1)k \le np
+$$
+$$
+(2p-1)k \ge 0 \implies p \ge 0.5
+$$
+which is part of our assumptions. Additionally, this confirms our heuristic that $f_k = v_k \iff p =0.5$
+
+
+
+\begin{tabular}{|p{0.35\linewidth}|p{0.27\linewidth}|p{0.27\linewidth}|}
+
+\hline
+Case & Naive Algorithm & Algorithm 2\\
+\hline
+Not best/second best so far & pass & pass\\
+\hline
+Second best so far & accept & accept\\
+\hline
+Best \& predicted best & pass & pass\\
+\hline
+Best \& predicted not best & pass, success rate = $v_k$ & accept, success rate = $f_k$\\
+\hline
+\end{tabular}
+
+\section{Markov equation solution}
+
+The limitation of the bellman equations was the lack of ability to store information about past candidates and their predictions. This can be solved with a similar set of equations that have two states: best predicted best, and best not predicted best. This case can be classified as a Markov equation as the state that we will move to fully depends on which equation we were on before and the information provided by secretary k+1. Before proposing and evaluating such equations, however, we will need to do more refined probability calculations. A similar approach was used in a paper by Chan, Fernandes, and Puterman where a simple bellman equation was substitute for a multi-state Markov equation\cite{Chan_Fernandes_Puterman_2021}
+
+\subsection{Probability calculations}
+
+Recall the notation:
+
+Let $M_k$ represent the event that a candidate is the second best
+
+Let $T_k$ represent the event that a candidate is the best
+
+Let $S_k$ represent the event that a candidate is the second best seen so far
+
+Let $B_k$ represent the event that a candidate is the best seen so far
+
+Let $O_k$ represent the event that a candidate is anything else
+
+Let $\mathcal{P}_k$ represent the event that a candidate is predicted to be best
+
+Let $A_k$ represent the event that the best candidate is or appears before candidate k
+
+Let $R_k$ represent the event that best candidate up to candidate k is predicted best\\
+
+Additionally, recall the previously calculated value of the probability we have seen the best candidates as:
+
+\begin{align*}
+P(A_k) &= 
+\begin{dcases*}
+   \frac{pk}{n}\frac{1}{\frac{pk}{n}+(1-p)(1-\frac{k}{n})} & \text{ if $R_k$ holds,}\\[12pt]
+  \frac{(1-p)k}{n}\frac{1}{1-(\frac{pk}{n}+(1-p)(1-\frac{k}{n}))} & \text{ if $R_k^c$ holds}\\
+\end{dcases*} \\[12pt]
+1 - P(A_k) &= 
+\begin{dcases*}
+   \frac{\left(1-p\right)\left(n-k\right)}{pk+(1-p)(n-k)} & \text{ if $R_k$ holds,}\\
+  \frac{p\left(n-k\right)}{n-pk-\left(1-p\right)\left(n-k\right)} & \text{ if $R_k^c$ holds.}\\
+\end{dcases*}
+\end{align*}
+
+We can begin with calculating the probability that the next candidate we see is the best so far and is/isn't predicted best. We do this by separately calculating the probability we see the true best candidate and the probability we see the best so far but not best candidate.
+
+$$
+P(T_k\cap B_k) = P(T_k) = \frac{1-P(A_{k-1})}{n-k}
+$$
+As it is the probability we have yet to see the best candidate divided by the number of remaining spots. 
+
+For $T_k^c \cap B_k$ we require the best candidate to have not been seen yet otherwise it would not be possible to see a ``best so far'' candidate. Therefore we require the probability that the best candidate is yet to be seen, the probability that we don't pick the best candidate next, and the probability we do pick a best so far candidate. 
+
+$$
+P(T_k^c \cap B_k) = P(A_{k-1})P(T_k^c|A_{k-1})P(B_k) = (1-P(A_{k-1}))\frac{n-k-1}{n-k}\frac{1}{k+1}
+$$
+
+Using these values we can easily calculate the probabilities we are interested in:
+
+$$
+P(B_k \cap \mathcal{P}_k) = P(B_k \cap \mathcal{P}_k \cap T_k) + P(B_k \cap \mathcal{P}_k \cap T_k^c) = pP(T_k\cap B_k) + (1-p)P(T_k^c\cap B_k)
+$$
+
+$$
+P(B_k \cap \mathcal{P}_k^c) = P(B_k \cap \mathcal{P}_k^c \cap T_k) + P(B_k \cap \mathcal{P}_k^c \cap T_k^c) = (1-p)P(T_k\cap B_k) + pP(T_k^c\cap B_k)
+$$
+
+Similarly, we need to use the value of $P(A_{k-1})$ in our calculation of the probability we see a second best so far candidate, $P(S_k)$. We can split into cases of whether we have or have not seen the best candidate and evaluate from there.
+
+$$
+P(S_k) = P(S_k|A_{k-1})P(A_{k-1})+P(S_k|A_{k-1}^c)P(A_{k-1}^c) =  P(A_{k-1})\frac{1}{k+1}+ (1-P(A_{k-1}))\frac{n-k-1}{n-k}\frac{1}{k+1}
+$$
+
+Finally, for the probability that we see neither the first nor second best candidate so far we can simply state
+$$
+P(O_k) = 1- P(S_k) - P(B_k) = 1 - P(S_k)-P(B_k \cap \mathcal{P}_k) - P(B_k \cap \mathcal{P}_k^c)
+$$
+
+An Important note is, for calculations regarding the probability of events, we use $P(A_{k-1})$ however for probabilities of success of events we use $P(A_k)$. This is because before seeing candidate $k$ we only have information of the first $k-1$ candidates, however, when choosing between accepting or rejecting a candidate, we have the prediction of our candidate and therefore an updated value of $P(A_k)$.
+
+We now calculate the probability that a second best so far candidate is truly the second best, $P(M_k|S_k)$.
+
+$$
+P(M_k|S_k) = P(S_k|M_k)\frac{P(M_k)}{P(S_k)}=P(A_k)\frac{1/(n-1)}{1/(k-1)} = P(A_k)\frac{k-1}{n-1}
+$$
+
+Similarly, as we will update the value for $P(A_k)$ with the information we get upon seeing a first best candidate, we have a similarly simple equation for $P(M_k|B_k)$
+
+$$
+P(M_k|B_k\cap \mathcal{P}_k) = (1-P(A_k\cap R_k))\frac{k}{n-1}
+$$
+
+$$
+P(M_k |B_k\cap\mathcal{P}_k^c) = (1-P(A_k\cap R_k^c))\frac{k}{n-1}
+$$
+
+
+We denote $P_{NB}^k(\cdot) := P(\cdot | \neg R_k)$ or ``P, not best''  and $P_{B}^k(\cdot) := P(\cdot | R_k)$ or ``P, best"
+Giving us equations:
+
+\begin{align*}
+v_k^{NB} &:= P_{NB}^k(O_{k+1}) v_{k+1}^{NB} \\
+      &\quad + P_{NB}^k(S_{k+1})\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|S_{k+1})\right) \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|B_{k+1})\right) \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|B_{k+1})\right)
+\end{align*}
+
+
+\begin{align*}
+v_k^{B} &:= P_{B}^k(O_{k+1}) v_{k+1}^{B} \\
+      &\quad + P_{B}^k(S_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|S_{k+1})\right) \\
+      &\quad + P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|B_{k+1})\right) \\
+      &\quad + P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|B_{k+1})\right)
+\end{align*}
+
+
+With the base case of $v_{n}^{B} = v_{n}^{NB} = 0$ as if we reach the nth candidate and do not make a decision we are guaranteed to fail. In cases where two values are equal, definitionally, the corresponding decision has no impact on the success rate.
+
+
+\subsection{Equation Results}
+\label{sec:Equation-Results}
+This equation is significantly more complex than the previous iteration. As the previous equation also didn't lead to a fully closed form, we proceed with restricting ourselves to computational analysis of these equations.
+
+While the introduction of a second equation increases the difficulty of analysis, the dynamic programming approach remains fairly simple. By simply using our starting points of $v_{n}^{B} = v_{n}^{NB} = 0$ and iterating through the value functions, $v^{NB} \text{ and } v^B$ backwards we can solve the problem. See Appendix \ref{sec:AppendixB} for pseudocode of the dynamic programming approach.
+
+For initial conditions $p \in [0.5,1]$ and $n \in \mathbb{N}$ we can iteratively solve our system of equations and produce various values which provide insights into our success rate and optimal behaviour. All calculations will be done with $n=1000$ candidates unless otherwise specified as we expect patterns to converge for sufficiently large values of $n$. Additionally, $P_{NB}$ and $P_B$ can be taken to represent $P_{NB}^k$ and $P_B^{k}$ respectively.
+
+\subsection{Behaviour for p = 0.5 \& p = 1.0}
+
+While the results produces in this section may not be as interesting as we already know optimal behaviour, it is important to validate our beliefs and the correctness of our equations using known endpoints.
+
+\begin{figure}[H] 
+    \centering 
+    \includegraphics[scale=0.60]{resources/Value Functions (p=1.00).pdf}
+    \caption{Value functions and probabilities for p = 1.0}
+    \label{fig:value p=1.0} 
+\end{figure}
+
+\begin{figure}[H] 
+    \centering
+\includegraphics[scale=0.60]{resources/Value Functions (p=0.50).pdf}
+    \caption{Value functions and probabilities for p = 0.5}
+    \label{fig:value p = 0.5} 
+\end{figure}
+
+
+
+We can calculate the end of the survey period by finding the first value where any one of the four probability functions surpasses the value function of either $v^B$ or $v^{NB}$. This represents to us that it is better to accept a candidate of that type than it is to pass therefore we begin accepting candidates thus ending the survey period. The values we have calculated for $S_0$ for both $p=0.5 \text{ and } p = 1.0$ match what we expect.
+
+For $p = 1.0$ we have that $v^B_0 = v^{NB}_0 = 1/e$ and that $S_0 = 368 \approx n/e$. This is further reflected in the graphs of success rates upon a given candidate. The values of $P_B(M_k|S_k)$ and $P_{NB}(M_k|B_k)$ both coincide with $k/n$ as is in the Secretary Problem. Similarly, the success rate of taking a best so far candidate that is predicted best, and taking a second best candidate that is not predicted best both are 0 for the whole graph. In both cases it is obvious why it is impossible to succeed choosing such candidates.
+
+For $p = 0.5$ we have that $v^B_0 = v^{NB}_0 = 1/4$ and that $S_0 = 500 = n/2$ once again matching our known values. As expected, we have that the success rates coincide with their counterparts, that is $P_{NB}(\cdot) =P_B({\cdot})$, as the classifier provides no information. Additionally, we can see the success rate of a second best candidate passing both the value function and the success rate of a best candidate at the same point of $n/2$. Furthermore, the curves for $P_NB(M_k|B_k), P_B(M_k|B_k) \text{ and the value functions for } k > B_0)$ all coincide validating the result from Vanderbei \cite{vanderbei2011postdoc}  that accepting a best candidate is equal to passing in this case.
+\subsection{Behaviour for p = 0.75}
+\label{sec:graph}
+
+
+\begin{figure}[H] 
+    \centering
+\includegraphics[scale=0.60]{resources/Value Functions (p=0.75).pdf}
+    \caption{Graphs for $p = 0.75$; $v^B_0 = v_0^{NB}\approx0.30196$; $v^B$ achieves its max at $v^B_{386} = 0.31977$}
+    \label{fig:value p = 0.75} 
+\end{figure}
+
+To allow for better analysis the lower graph has been modified to include the value functions as well as the success rates of the various cases.
+
+Clearly for more complicated cases there is more complicated behaviour in terms of what candidates we accept. Through observation we can see 3 periods which have been marked on the graph. In order they are:
+\begin{enumerate}
+    \item $B_0: P_{NB}(M_k|B_k) > v^{NB}$ representing that accepting a best so far and not predicted best candidate is at least as good as passing
+    \item $S_0: P_B(M_k|S_k) > v^{B}$ representing that accepting a second best so far candidate is better than passing but only when the best is predicted best
+    \item $V_0: P_{NB}(M_k|S_k) > v^{NB}$ representing that accepting a second best so far candidate is better than passing when the best isn't predicted best.
+\end{enumerate}
+
+While there are further intersection point, they are only between combinations of value functions and predictors that do not represent a choice that needs to be made. FOr example $ P_B(M_k|S_k) \text{ and }v^{NB}$represents that accepting a second best candidate when the best candidate is predicted best is better than passing if the best candidate is not predicted best. As the choice between these two values is never needed to be made, we do not need to consider this as another period with regards to algorithm behaviour.
+
+The immediate observation is that there are in fact 4 intervals as compared to the previous expected 3 as outlined in algorithm 4!
+
+We can update our optimal algorithm to be of the form:
+\begin{enumerate}
+    \item \textit{Surveying period:} For candidates before $B_0$, reject any candidate.
+    \item \textit{Semi-Confident period:} For candidates after $B_0$ but before $S_0$, only accept a candidate if they are the best so far, but not predicted best.
+    \item \textit{Confident period:} For candidates after $S_0$ but before $V_0$, only accept a candidate if they are the best so far, but not predicted best, or if they are second best so far and the current best is predicted best.
+    \item \textit{Unconfident period:} Finally, for candidates after $V_0$ only accept a candidate if they are best so far and not predicted best, or second best so far regardless of the state of the best so far candidate.
+\end{enumerate}
+
+Further we can observe that, as the conditional probabilities never re-intersect with the value function(s) except at k = n, this confirms that we can simply express the optimal algorithm using periods. Additionally, our assumption that accepting a best predicted best candidate will always be as bad as passing is verified by $P_B(M_k|B_k)$ being less than the value functions for all $k$.
+
+We now turn our attention to the upper graph, and the values of $v^{B}$ and $v^{NB}$. We see that while $v^{NB}$ is monotone decreasing with k, $v^B$, unlike in the case of $p=0.5 \text{ and }  p = 1.0$, is initially increasing, reaching its peak between $B_0 \text{ and } S_0$. While initially surprising that the success rate can increase while in the survey period, this is because the state at the end of the survey has an influence on the overall success rate. As such, if we have a candidate that maintains being the best and is predicted best we will have an overall higher success rate.
+
+We also observe that $v^{NB} \le v^B$ for all values of k indicating that you have a higher success rate at any given point if your best candidate is predicted best rather than not best. This is reflected in the fact that $P_B(M_K|S_k) > P_{NB}(M_K|S_k)$. While $P_B(M_K|B_k) < P_{NB}(M_K|B_k)$, those probabilities are calculated upon seeing the candidate meaning the state of the value function is not included in those calculations at each step.
+
+\subsection{Threshold Values Analysis}
+
+We can vary the graph to compare various threshold values against the p to provide further insights. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{resources/ThresholdGraphs.pdf}
+    \caption{A plot of the optimal values to begin each period. Can be read as the candidates coming from left to right with the curves representing changes in behaviour for a given $p$}
+    \label{fig:thresholdgraph}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{resources/success probability.pdf}
+    \caption{A plot of the success rates with optimal decision making for a given p value}
+    \label{fig:successGraph}
+\end{figure}
+
+
+In figure \ref{fig:thresholdgraph} we can see the expected behaviour at $p = 0.5$ with a classic surveying period up until $n/2$, followed by an unconfident period as we have no trust in the predictor. Similarly, at $p = 1.0$ we can see the beginning of the ``confident interval'' converges to $n/e$ while the beginning of the ``unconfident tends'' to $1$ representing full confidence in the predictor.
+
+Another point to notice is that $B_0$ decreases very sharply from $n/2$ for low values of p even getting to $n/e\approx368$ at $p = 0.5661$ before reaching its minimum of $338$ at $p=0.7032$ and eventually returning to $n/e$ at $p=1$.
+
+The reasoning behind why $B_0$ decreases so sharply for small values of p is that as the value functions and the success rate of a best candidate coincide for $p=0.5$. Additionally, the values of both functions reach a local maximum at $k = n/2$ meaning any small permutation to the success rate of accepting a given best so far candidate can have a large effect.
+
+The heuristic reasoning behind $B_0$ increasing past $n/e$ and then decreasing back down is the effects of accepting or rejecting such a candidate. If a best so far but not predicted best candidate is seen, if rejected then the win rate becomes $v^{NB}$ which, as discussed, is categorically lower than $v^B$. This means it is ``easier'' to make the decision  to accept such a candidate as the alternative is the worse of the two possible states. We can best observe this difference in the value functions of $p=0.5$ and $p=0.51$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/Zoomed Value Functions (p=0.50).pdf}
+    \caption{Plot of the value functions and $P_{NB}(M_k | B_k)$ for $p=0.50$. The lower graph is zoomed into between $k = [400,600]$, we can see the value function perfectly coincides with $P_{NB}(M_k|B_k)$. }    \label{fig:vector_plotp=0.50}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/Zoomed Value Functions (p=0.51).pdf}
+    \caption{A similar plot to Figure 7 of the value functions and $P_{NB}(M_k | B_k)$ for $p=0.51$. Despite the small change in the value of p we can see a fairly large difference in the values.}
+    \label{fig:vector_plotp=0.51}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/success at B_0.pdf}
+    \caption{A plot of the success rate of the value functions at $B_0$. They take a maximum difference of $0.0296$ at $p \approx 0.7375$}
+    \label{fig:success at B_0}
+\end{figure}
+
+As we can see from Figure ~\ref{fig:success at B_0}, the difference between $v^B \text{ and } v^{NB}$ widens towards the middle probabilities reflecting the behaviour of $B_0$. From Figure ~\ref{fig:vector_plotp=0.50} and ~\ref{fig:vector_plotp=0.51}, we can observe the large effect that small changes in probability can have on the intersection point that decide $B_0$, thus explaining the phenomenon.
+
+\subsection{Results Summary and Validation}
+Despite previous algorithms and analysis providing seemingly good results and success rates, we can see from the results of section 10 that there were major gaps in our understanding at that stage. 
+
+There are 3 major surprises as a result of our equations analysis:
+
+\begin{itemize}
+    \item The solution is characterized by 4 intervals of behaviour rather than 3 as seen in the Secretary problem with Advice.
+    \item The threshold that ends the survey period is non-monotonic with respect to p, reaching a minimum near the halfway point of the two extremes. Additionally, the optimal survey period ends at an earlier point for values of $p \in (0.56,1)$ than it does for $p=1.0$.
+    \item For all values of $k \in (0,n), v^B_k\ge v^{NB}_k$. As a corollary, for values of $p \ne 0, 1$ the success rate changes in the survey period depending on the state we are in.
+\end{itemize}
+
+Additionally, there are 3 previous assumptions that were confirmed by our analysis:
+
+\begin{itemize}
+    \item In section \ref{assumption1}: After the end of the survey period, it is always optimal to accept candidates that are best so far, but not predicted best
+    \item In section \ref{assumption1}: It is never better to accept a best so far candidate that is predicted to be best, than it is to pass.
+    \item In section \ref{assumption2}: Once we begin to accept a class of candidates, we do not change that behaviour.
+\end{itemize}
+
+While we have concluded these facts through observation of the graphs and solutions to the equations, it would be prudent to validate them through statistical analysis as well.
+
+\subsubsection{Optimal solution}
+
+We can begin with comparing our new optimal solution with our previous best attempt, Algorithm 4. We can graph both the calculated success rate and experimental success rates. We call the behaviour specified by our equations \verb|Algorithm 0|
+
+All tests are run with 5,000,000 trails for each algorithm at each specified value of p. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/algorithm0vs4.pdf}
+    \caption{A plot of the success rate of algorithm 0 vs algorithm 4. Clearly algorithm 0 performs at least as good for all values of p}
+    \label{fig:plots of algorithm 0 vs 4}
+\end{figure}
+
+While we can verify that the calculated algorithm performs better than algorithm 4, this does not support the claim of optimality of the algorithm. Assuming an optimal algorithm will take the form of having 4 intervals, we can run trials with thresholds proposed by the markov equations with slight permutations. The expectation is that any deviation from the calculated thresholds will result in a decrease in overall success rate.
+
+For n = 600, the equation produces the following thresholds:
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|p{0.10\linewidth}|p{0.18\linewidth}|p{0.18\linewidth}|p{0.18\linewidth}|}
+
+\hline
+p & semi-confident, $B_0$&confident, $S_0$& unconfident, $V_0$\\
+\hline
+0.50 & 300 & 300 & 300 \\
+\hline
+0.55 &227 & 295 & 314 \\
+\hline
+0.60 &212& 289 & 328\\
+\hline
+0.65 &205& 283 &  343\\
+\hline
+0.70 &203& 277 &  360\\
+\hline
+0.75 & 203 & 270 &  378\\
+\hline
+0.80 &204& 262 &  398\\
+\hline
+0.85 &207& 253 &  421\\
+\hline
+0.90 &210& 244 &  449\\
+\hline
+0.95 &214& 233 &  488\\
+\hline
+1.00 &222& 222 &  600\\
+\hline
+
+\end{tabular}
+\caption{Thresholds generated by the markov equations}
+\end{center}
+\end{table}
+
+One way we could try to permute the calculated solutions is to run trials with the proposed thresholds + or - 5. In addition to this we will have to try multiple permutations and have a ``control'' group. Therefore, we will run trials on 27 different algorithms each with slight permutations from the expected optimal strategy. for each combination of values of p and algorithm, 5,000,000 trials are run on 600 candidates each.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrrr}
+\hline
+p & v1 & v2 & v3 & v4 & v5 \\
+\hline
+0.60 & 26.9094 (5,0,5) & 26.9063 (-5,-5,0) & 26.9056 (0,5,-5) & 26.9043 (0,0,0) & 26.9026 (0,5,5) \\
+0.65 & 27.9896 (0,5,0) & 27.9714 (0,0,5) & 27.9714 (5,5,0) & 27.9622 (-5,0,0) & 27.9526 (0,-5,-5) \\
+0.70 & 29.0776 (0,-5,0) & 29.0539 (5,5,0) & 29.0533 (5,0,0) & 29.0512 (0,-5,5) & 29.0484 (5,-5,-5) \\
+0.75 & 30.1745 (0,0,0) & 30.1636 (5,5,0) & 30.1598 (-5,-5,5) & 30.1440 (-5,5,5) & 30.1440 (0,-5,0) \\
+0.80 & 31.3047 (-5,0,5) & 31.3017 (0,0,0) & 31.2979 (0,5,5) & 31.2969 (-5,-5,-5) & 31.2939 (5,0,0) \\
+0.85 & 32.4907 (5,0,5) & 32.4903 (0,-5,0) & 32.4878 (-5,0,0) & 32.4871 (0,0,-5) & 32.4868 (5,0,0) \\
+0.90 & 33.7869 (5,0,0) & 33.7752 (-5,0,5) & 33.7736 (-5,0,0) & 33.7685 (0,-5,5) & 33.7656 (0,0,5) \\
+\hline
+\end{tabular}
+\caption{This table represents out of the 27 possible permutations the top 5 for each of the p values which would expect a large effect. the values in paranteses represent how the thresholds were permuted. e.g. (5,0,-5) in p =0.6 means thresholds (217,289, 323) were used instead of (212,289,328)}
+\end{table}
+
+The results from the trials are not as conclusive as one may hope, however they do lean in the favour of the proposed thresholds being optimal. 
+
+In Table 4 there are a total 48 cases where no permutation, 32 cases where there is a positive permutation, and 25 cases where there is a negative permutation. While these results are not conclusive, we also note that the differences between algorithms are small enough to likely be due to random chance. 
+
+\subsubsection{Surveying threshold begins before $n/e$}
+
+The default assumption for the survey threshold was that it would decrease monotonically from $n/2$ to $n/e$ as p increases from $0.5$ to $1.0$. In line with that assumption, we can re-run tests where if the surveying threshold is less than $n/e$ we will manually set it to $n/e$ and observe the results.
+\begin{table}[h]
+\centering
+\begin{tabular}
+{|p{0.10\linewidth}|p{0.15\linewidth}|p{0.10\linewidth}|p{0.10\linewidth}|p{0.10\linewidth}|}
+\hline
+p&Survey Threshold &Unfloored Rate&Floored Rate&Difference\\
+\hline
+0.50 & 300 & 24.9654 & 24.9552 & 0.0102 \\
+0.55 & 227& 25.8734 & 25.8774 & -0.0040 \\
+0.60 & \textbf{212}& 26.9008 & 26.8782 & 0.0226 \\
+0.65 & \textbf{205} & 27.9692 & 27.9144 & 0.0548 \\
+0.70 & \textbf{203} & 29.0706 & 28.9802 & 0.0904 \\
+0.75 & \textbf{203} & 30.1608 & 30.0726 & 0.0882 \\
+0.80 & \textbf{204} & 31.3094 & 31.2200 & 0.0894 \\
+0.85 & \textbf{207} & 32.4914 & 32.3928 & 0.0986 \\
+0.90 & \textbf{210} & 33.7822 & 33.7184 & 0.0638 \\
+0.95 & \textbf{214} & 35.1394 & 35.1038 & 0.0356 \\
+1.00 & 222 & 36.6832 & 36.6732 & 0.0100 \\
+\hline
+\end{tabular}
+\caption{Results of floored vs unfloored values. Other thresholds as specified in table 3 are unchanged. Bolded values are set to 222 for the floored rate test. Simulation is run with 5,000,000 tests and 600 candidates per cell.}
+\end{table}
+\subsubsection{Validating $v_k^B \ge v_k^{NB}$, and changes in survey period}
+
+Most obviously in Figure \ref{fig:value p = 0.75} we observed that $v^B > v^{NB}$ for all k, even in the survey period. Additionally, in Figure ~\ref{fig:success at B_0} we observed that the difference is 0 at the extreme values of p and is largest towards the midpoint of the values p can take.
+
+We can validate this by running simulations with the parameters and ``pausing'' when we get to a certain value of k and noting down the state of our best so far candidate. The simulation I chose to ran was with $p=0.75$ with the ``pause'' at $k = B_0 = 338$. 
+
+The expected results are:
+$$
+v_0^B = v_0^{NB} \approx 0.3017.\hspace{4em} v^B_{B_0} \approx 0.3188 \hspace{4em}  v^B_{B_0} \approx 0.2893
+$$.
+
+Using the \verb|Kotlin| tool running on $p =0.75$, $n=1000$ candidates, $5,000,000$ trials, and using the optimal algorithm as detailed the results are:
+
+\begin{verbatim}
+Overall success rate: 0.301531
+Success rate of Best Predicted Best at k = 338: 667559/2096073 = 0.318481
+Success rate of Best Not Predicted Best at k = 338: 840094/2903927 = 0.289296
+\end{verbatim}
+
+These values are very close to one another validating our results.
+
+We can further analytically validate that the values of $v_0$ and $v_{B_0}$ are consistent with one another. Using the law of total probability we can re-calculate the overall success rate using the success rate at $B_0$
+
+$$
+P(\text{Success}) = P(R_k)P(\text{Success}|R_k)\cdot P(R_k^c)P(\text{Success}|R_k^c) = pP(A_k) + (1-p)P(A_k^c)
+$$
+
+The probability that our best candidate is predicted best after seeing $k/n$ candidates, i.e. $P(R_k)$, is $p\frac{k}{n} + (1-p)\frac{n-k}{n}$. We can substitute in our calculated and derived values for:
+$$
+P(\text{Success}) = (0.75\frac{338}{1000} + 0.25\frac{662}{1000})(0.3188) + (0.25\frac{338}{1000} + 0.75\frac{662}{1000})(0.2893) = 0.3017 \approx v_0^B
+$$
+as expected.
+
+\subsection{Small n Verification}
+
+While behaviour as n tends to infinity is typically the main focus, we can further validate that our equations are accurate by comparing with known behaviour for small values of n. We will omit $n=1$ as it is trivially unwinnable as there isn't a second best candidate. Additionally, our equations produce divide by 0 errors as there is division by $n-1$.
+
+\paragraph{n = 2} 
+
+For n = 2, we would expect that for $p=1.0$ we have a 100\% success rate as we are told which candidate is the best so we simply reject that candidate. Likewise, for $p=0.5$ we would expect a 50\% success rate as there is an equal chance of it being the first or second candidate. We can see this reflected in the graph:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/Value Functions (n = 2, p=1.00).pdf}
+    \caption{A plot of the value functions for n = 2 and p = 1}
+    \label{fig:n=2p=1}
+\end{figure}
+
+Notice that our initial success rate is 1.0 as expected, however if we reach candidate 1 and have seen the candidate that is not predicted best, we have failed. Upon reaching n = 2 corresponding to candidate 3, if we have not made a decision then we have certainly failed.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/Value Functions (n = 2, p=0.50).pdf}
+    \caption{A plot of the value functions for n = 2 and p = 0.5}
+    \label{fig:n=2p=0.5}
+\end{figure}
+
+Similarly, for the case where p = 0.5, we have the expected output of $v^B_0 = v^{NB}_0=0.5$. In this case the value function never goes above 0.5, however if we reach the final candidate and we see a "second best so far" candidate then we have certainly won, representing $P_B(M_1|S_1) = P_{NB}(M_1|S_1) = 1.0$. Because of the recursive nature of our equations, we define the value functions of the $n$th candidate to be 0. The probabilities in this case are also nonsensical, but for continuity, accepting a 2nd best candidate is defined to have win rate of 1, and accepting a best so far candidate is defined to be 0. This is reflected in the figures.
+
+\paragraph{Reduction to Secretary Problem}
+
+As was discussed early on, for p = 1.0, the problem, for large n, reduces to the Secretary Problem. However, if we are being more precise, since we do not need to account for the one candidate that we know is best, the problem actually reduces to the Secretary Problem for n-1 candidates. As calculated in a book by Siegrist \cite{Libretexts_2022} we have the following values for the Secretary Problem given n, and the values produced by our Markov Equations.
+
+\begin{table}[H]
+\centering
+\begin{tabular}
+{|p{0.15\linewidth}|p{0.15\linewidth}|p{0.45\linewidth}|}
+\hline
+Candidates n & Secretary Problem & Postdoc Problem with Advice for p =1.0\\
+\hline
+1 & 1 &  NaN \text{but trivially,} 0 \\
+2 & 0.5&  1 \\
+3 & 0.5& 0.5  \\
+4 & 0.4583& 0.5 \\
+5 &  0.433& 0.4583\\
+6 & 0.4278& 0.433\\
+7 &  0.4143&  0.4278\\
+8 &  0.4098&   0.4143\\
+9 & 0.4060& 0.4098 \\
+10 &0.3987&  0.4060\\
+\hline
+\end{tabular}
+\caption{Results of the Secretary Problem vs the Postdoc Problem with Advice for p = 1.0 for small values of n. As expected, the values from column 3 match the row above for column 2.}
+\end{table}
+
+
+\subsection{Final Model for Optimal Solution}
+
+In our equations we used ``max'' to denote that the optimal value should always be taken. However, with our refined understanding of the optimal solution we can simplify our result to allow for a cleaner and more easily solvable set of equations.
+
+The original equations were:
+
+\begin{align*}
+v_k^{NB} &:= P_{NB}^k(O_{k+1}) v_{k+1}^{NB} \\
+      &\quad + P_{NB}^k(S_{k+1})\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|S_{k+1})\right) \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|B_{k+1})\right) \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|B_{k+1})\right)
+\end{align*}
+
+
+\begin{align*}
+v_k^{B} &:= P_{B}^k(O_{k+1}) v_{k+1}^{B} \\
+      &\quad + P_{B}^k(S_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|S_{k+1})\right) \\
+      &\quad + P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)\max\left(v_{k+1}^{NB},P_{NB}^{k+1}(M_{k+1}|B_{k+1})\right) \\
+      &\quad + P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1})\max\left(v_{k+1}^{B},P_{B}^{k+1}(M_{k+1}|B_{k+1})\right)
+\end{align*}
+
+However we can refine them to:
+
+For $k < B_0$
+\begin{align*}
+v_k^{NB} &= (P_{NB}^k(O_{k+1}) + P_{NB}^k(S_{k+1})+P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)) v_{k+1}^{NB} \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})v_{k+1}^{B}\\\\
+v_k^{B} &= (P_{B}^k(O_{k+1}) + P_{B}^k(S_{k+1})+P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1})) v_{k+1}^{B} \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)v_{k+1}^{NB}
+\end{align*}
+
+For $B_0 \le k < S_0$
+\begin{align*}
+v_k^{NB} &= (P_{NB}^k(O_{k+1}) + P_{NB}^k(S_{k+1})) v_{k+1}^{NB} \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})\\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})v_{k+1}^{B}\\\\
+v_k^{B} &= (P_{B}^k(O_{k+1}) + P_{B}^k(S_{k+1})+P_{B}^k(B_{k+1} \cap \mathcal{P}_{k+1})) v_{k+1}^{B} \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})
+\end{align*}
+
+For $S_0 \le k < V_0$
+
+\begin{align*}
+v_k^{NB} &= (P_{NB}^k(O_{k+1}) + P_{NB}^k(S_{k+1})) v_{k+1}^{NB} \\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})\\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})v_{k+1}^{B}
+\end{align*}
+
+
+\begin{align*}
+v_k^{B} &= (P_{B}^k(O_{k+1}) +P_{B}^k(B_{k+1}\cap \mathcal{P}_{k+1})) v_{k+1}^{B} \\
+        &\quad +P_{B}^k(S_{k+1})P_{B}^{k+1}(M_{k+1}|S_{k+1})\\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})
+\end{align*}
+
+For $V_0 \le k < n$
+
+\begin{align*}
+v_k^{NB} &= P_{NB}^k(O_{k+1}) v_{k+1}^{NB} \\
+    &\quad  + P_{NB}^k(S_{k+1})P_{NB}^{k+1}(M_{k+1}|S_{k+1})\\  
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})\\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1})v_{k+1}^{B}
+\end{align*}
+
+
+\begin{align*}
+v_k^{B} &= (P_{B}^k(O_{k+1}) +P_{B}^k(B_{k+1}\cap \mathcal{P}_{k+1})) v_{k+1}^{B} \\
+        &\quad +P_{B}^k(S_{k+1})P_{B}^{k+1}(M_{k+1}|S_{k+1})\\
+      &\quad + P_{NB}^k(B_{k+1} \cap \mathcal{P}_{k+1}^c)P_{NB}^{k+1}(M_{k+1}|B_{k+1})
+\end{align*}
+
+And, finally, for $n = k$
+$$
+v_k^{NB} = v_k^B = 0
+$$
+
+While the equations are admittedly notationally dense, they quite beautifully entirely characterize and solve the problem with pure probability analysis.
+
+
+\section{Conclusions and Further Work}
+\label{sec:conclusion}
+
+In this paper we have detailed many approaches to the \textit{Postdoc Problem with Advice} using heuristic algorithms, drawing inspiration from solutions to adjacent problems, and using simulations to refine our techniques. However, in the end the problem was fully solved using a system of recursive equations which revealed a number of insights into the intricacies of this problem. The main result is that the optimal strategy is broken into 4 periods of different behaviour straying from the maybe expected 3 periods as was in the \textit{Secretary problem with Advice}.
+
+An obvious continuation of the work would be to search for a closed or semi-closed form of the recursive equations. With rudimentary techniques it seems unlikely that one exists as detailed in section \ref{sec:ninetwo}. However, Markov equations are typically solved with approaches using eigenvalues\cite{2011MITlec}. Such techniques may be applicable here. Other problems I was not able to explore are:
+\begin{itemize}
+    \item A reference letter that predicts whether a candidate is the true best or not. This would better overlay with the solution to the Secretary Problem with Predictions as clearly for $p=1.0$ success rate is 1, however the initial heuristic is the overall success rate would be lower as $p=0.5$ is lower.
+    \item A question relating to this problem is; from the perspective of an applicant, where should one place themselves to optimize their chance of being picked given their place in the $n$ applicants
+    \item Another child question of my paper is what would be the impact of the value of $p$ being unknown to the algorithm. The initial thought is that it would become less relevant for large values of $n$ as there would be a larger interval for prediction of the value of p.
+\end{itemize}
+
+\section{BCS Project Criteria \& Self-Reflection}
+
+This section demonstrates how my project meets the six outcomes expected by the Chartered Institute for IT. 
+
+\subsection*{Outcome 1: Apply practical and analytical skills gained during the degree programme}
+
+\textbf{Summary:} In my degree programme I opted for modules that matched my interest of coding and theoretical computer science. This project has been an amazing combination of analysis, programming, and data science. I have utilized the skills learnt in both \textit{Efficient Algorithms } (COMP526) and \textit{Advanced Algorithmic Techniques}(COMP523) in algorithm creation. Additionally, the skills learnt in \textit{Web Mapping and Geo-visualization}(ENVS456) were essential for creating readable and insightful graphs.
+
+\textbf{Evidence and cross-references:}
+\begin{itemize}
+\item Algorithmic creation: Section \ref{sec:Equation-Results} 
+\item Experiments/Simulations: Section \ref{sec:graph}
+\item Programming techniques: Section \ref{sec:desgin}
+\end{itemize}
+
+\subsection*{Outcome 2: Innovation and/or creativity}
+
+\textbf{Summary:} This problem has been an enormous exercise in combining the skills I have learnt with the heuristics of a novel and unexplored problem. The initial angles with which I attempted to solve the problem required completely new ideas as the adjacent problems did not apply. Additionally, determining the best way to display my results required a creative approach to diagram creation.
+
+\textbf{Evidence and cross-references:}
+\begin{itemize}
+\item Novel approach/insights: Section \ref{sec:novelAppraoch} 
+\item Data communication: Section \ref{sec:design}
+\end{itemize}
+
+\subsection*{Outcome 3: Synthesis of information, ideas and practices to provide a quality solution, with evaluation}
+
+\textbf{Summary:} This project has been a very interesting combination of multiple source, solutions, and approaches. Synthesising information was essential in that my question is a very obvious derivative of three ``parent'' problems which have been solved. Using the solutions of those problems, specifically Vanderbei \cite{vanderbei2011postdoc} and D\"utting et al.,\cite{dütting2020secretariesadvice} to guide my decision making required not only a deep understanding of those problems and their solution, but also how they related to one another. 
+
+I was able to eventually produce a high quality optimal solution again through my analysis of probability and mathematical prowess. While none of the calculations were explicitly complicated, keeping track of many probabilities and preventing off-by-one errors required using skills learnt in both the algorithm courses in this programme and previous study of mathematics.
+
+\textbf{Evidence and cross-references:}
+\begin{itemize}
+\item Literature review synthesis: Section \ref{sec:synthesis}
+\item Results and discussion; limitations: Section \ref{sec:testingandexamples} / Section \ref{sec:limitations}
+\end{itemize}
+
+\subsection*{Outcome 4: Meets a real need in a wider context}
+
+\textbf{Summary:} While the solution to my problem is much more of a theoretical nature, the family of problems it belongs to certainly has real world applications. For example, a famous online problem of work distribution has direct applications to computer CPU allocations as researched in paper by Amrani and Tani \cite{CPUallocation}. Additionally, in the same way that my question and solution were inspired by adjacent problems, it is possible that the solution found in this paper could inspire more similar problems which enriches the field and family of problems further.
+
+Another application of the family of problems with predictors is in machine learning. Learning algorithms take in predictors and need to update their trust of said predictors as they progress. Problems like mine where a predictor is known can provide a framework for how to act if there is an estimation of a predictor accuracy.
+
+Additionally, should one be attempting to hire a postdoc which is common for a university, we now know the optimal way to do it.
+
+\subsection*{Outcome 5: Ability to self-manage a significant piece of work}
+
+\paragraph{Scope, objectives, and planning}
+The scope of the project was always the objectives to find a computational solution, create a simulation tool to evaluate my solution, and perform rigorous analysis. Initially, I planned to dedicate most effort to analysis, however initial algorithm creation proved very difficult as knowing where to begin with a new problem was challenging. However after re-adjusting my focus and ensure I had an algorithm I was confident in, I was able to regain time and accomplish my objectives for the project.
+
+\paragraph{Time management and workflow}
+I allocated time across literature review, heuristic design, simulation, and formal analysis. This project was submitted with an extension due to family health issues. However, I was able to readjust the scope of what I intended to do and increase my time dedication to the project after the issues were resolved allowing for satisfactory completion.
+
+\paragraph{What this shows about my self-management}
+Overall, I demonstrated a strength in planning, adaptability, and disciplined work and I improved at time distribution by learning how to focus on specific tasks rather than try to do multiple parts of the project at once.
+
+\subsection*{Outcome 6: Critical self-evaluation of the process}
+
+\paragraph{What went well}
+I am very pleased that I was able to eventually produce a system of equations that fully model the problem. Towards the end of the project writing phase it was seeming unlikely that I would find an analytical solution, but I managed in the end. Additionally, while my first 4 algorithms did end up being sub optimal, the process of devising algorithms and iteratively improving based on heuristics was very rewarding and allowed for a continuous deepening of my understanding. Another aspect that was successful was my diagram creation. I feel that while the concepts I attempted to communicated were at times complex, the supplementary graphs allowed for me to be clear about my ideas.
+
+\paragraph{What did not go as well}
+My initial heuristic phase had limitations and beginning the algorithm creation phase was a big time sink. In retrospect, attempting analysis a bit earlier in the style of a system of equations, even if not fully fleshed out, may have provided more insights which could speed up the algorithm creation process. Another aspect that didn't go as well was the need for multiple tools. While Kotlin and Python both had their uses and I was able to seamlessly transfer data between the tools as needed towards the end of the project, in hindsight it was foreseeable that a compiled language would have been better for this task. 
+
+
+\paragraph{Limitations and future work}
+While I provided a complete solution via recursive equations, I did not obtain a closed or semi-closed form. As noted in Section\ref{sec:conclusion}, a closed-form solution appears unlikely with rudimentary techniques; however, eigenvalue-based approaches to the underlying Markov chain may reveal tractable structure.
+
+Additionally, as detailed in my project proposal and conclusion, there are some adjacent problems that I would have liked to explore which I was not able to accomplish in the scope of this problem.
+
+
+
+\bibliography{references} 
+
+
+\section*{Appendix}
+
+
+\appendix
+
+\section{Bellman equations for the classic Secretary Problem}
+\label{sec:AppendixA}
+
+First note that for any chance of success the chosen candidate must be the best candidate seen so far.
+
+Let $g_k$ represent the probability that the $k^{th}$ candidate which is best so far is chosen and remains the best until the end of the interviews. As the candidates are randomly evenly distributed and at this point we have seen k candidates there is a $\frac{1}{k+1}$ chance that the next candidate is better and a $\frac{k}{k+1}$ chance they are worse. Therefore we have
+
+$$
+g_k = 
+\begin{cases}
+   \frac{k}{k+1}g_{k+1} &  k < n \\
+   1& k = n
+\end{cases}
+$$
+
+With $g_n = 1$ as if the final candidate is the best seen so far we are guaranteed success.
+
+This recursive equation is easily solvable with
+$$
+g_k = \frac{k}{k+1}g_{k+1} = \frac{k}{k+1}\frac{k+1}{k+2}\frac{k+2}{k+3} \dots \frac{n-2}{n-1} \frac{n-1}{n}g_n = \frac{k}{n} g_n = \frac{k}{n}
+$$
+
+Therefore, if the $k^{th}$ candidate is best so far we can say if chosen there is $\frac{k}{n}$ probability they are the true best candidate.\\
+
+By the nature of dynamic programming, it is sufficient to at every step make the best decision possible. I will introduce a value function, $v_k$ that represents the chance of success after interview the $k^{th}$ candidate with optimal decision making.
+
+At each step, $k$, there are 3 possibilities, 
+\begin{enumerate}
+\item The interviewed candidate is not the best so far and so we pass
+\item The interviewed candidate is the best so far and we pass for success rate $v_{k+1}$
+\item The interviewed candidate is the best so far and we accept for success rate $g_{k+1}$
+\end{enumerate}
+
+reflecting this, the equation for $v_k$ is:
+$$
+v_k = 
+\begin{cases}
+   \frac{k}{k+1}v_{k+1} + \frac{1}{k+1}max\{g_{k+1}, v_{k+1}\} &  k < n \\
+   0& k = n
+\end{cases}
+$$
+
+where $v_n = 0 $ as if the final candidate is rejected there is no chance of success
+
+It was proven in Bayon et al. \cite{bayon2017bestorworstpostdocproblems} that the optimal strategy must be a boundary problem. That is, the optimal strategy must be of the form all candidates before a certain point, $k_0$, are rejected and after that the next best candidate is accepted. 
+
+By definition:
+$$
+k < k_0 \implies \max\{g_{k+1}, v_{k+1}\} = v_{k+1}
+$$
+$$
+k \ge k_0 \implies \max\{g_{k+1}, v_{k+1}\} = g_{k+1}
+$$
+
+So we can simplify our value equation to 
+
+$$
+v_k = 
+\begin{cases}
+   \frac{k}{k+1}v_{k+1} + \frac{1}{k+1}v_{k+1} &  k < k_0 \\
+  \frac{k}{k+1}v_{k+1} + \frac{1}{k+1} g_{k+1} &  k \ge k_0 \\
+   0& k = n
+\end{cases}
+=
+\begin{cases}
+   v_{k+1} &  k < k_0 \\
+  \frac{k}{k+1}v_{k+1} + \frac{1}{k+1} \frac{k+1}{n} &  k \ge k_0 \\
+   0& k = n
+\end{cases}
+= 
+\begin{cases}
+   v_{k_0} &  k < k_0 \\
+  \frac{k}{k+1}v_{k+1} + \frac{1}{n} &  k \ge k_0 \\
+   0& k = n
+\end{cases}
+$$
+
+We can focus our attention on solving the final step of when $k \ge k_0$ namely $v_k = \frac{k}{k+1}v_{k+1} + \frac{1}{n}$
+
+by using the recursive definition we get:
+
+$$
+v_k =\frac{k}{k+1}(\frac{k+1}{k+2}v_{k+2} + \frac{1}{n}) + \frac{1}{n}  = 
+\frac{k}{k+2}v_{k+2} + \frac{k}{n(k+1)} + \frac{1}{n}
+$$
+$$
+= \frac{k}{k+2}(\frac{k+2}{k+3}v_{k+3} + \frac{1}{n}) + \frac{k}{n(k+1)} + \frac{1}{n} = \frac{k}{k+3}v_{k+3} + \frac{k}{n(k+2)} + \frac{k}{n(k+1)} + \frac{1}{n}
+$$
+
+Following the pattern we get a general form:
+
+$$
+v_k = \frac{k}{n}v_n + \sum_{x = 0}^{n-k}\frac{k}{n(k+x)} = 0 + \sum_{x = k}^{n}\frac{k}{nx} = \frac{k}{n}\sum_{x = k}^{n}\frac{1}{x}.
+$$
+
+For large values of n we can approximate:
+$$
+\sum_{x = k}^{n}\frac{1}{i} \approx \int_{k}^{n} \frac{1}{x} \,dx 
+= \ln(n) - \ln(k) = -\ln(\frac{k}{n})
+$$
+
+meaning for $n >k \ge k_0$ we have $v_k = -\frac{k}{n} \ln(\frac{k}{n})$
+
+We can verify this equality in the recursive equation.\\
+
+Assume that $v_{h+1} = -\frac{h+1}{n} \ln(\frac{h+1}{n})$:
+
+$$
+v_h = \frac{h}{h+1}v_{h+1} + \frac{1}{n} = -\frac{h}{h+1}\frac{h+1}{n} \ln(\frac{h+1}{n}) + \frac{1}{n} 
+$$
+
+$$
+= - \frac{h}{n}\ln(\frac{h+1}{h} \cdot \frac{h}{n}) + \frac{1}{n}
+= - \frac{h}{n}\ln(\frac{h}{n}) + \frac{h}{n}(-\ln(1+\frac{1}{h}) + \frac{1}{h}) 
+$$
+
+Using the same assumption from the previous equation of a large value of $h$, we can approximate $\ln(1+\frac{1}{h})\approx \frac{1}{h}$ giving:
+
+$$
+= - \frac{h}{n}\ln\left(\frac{h}{n}\right) + \frac{h}{n}\left(-\frac{1}{h} + \frac{1}{h}\right) =  - \frac{h}{n}\ln\left(\frac{h}{n}\right) = v_h
+$$
+
+as required.
+
+Therefore the optimal strategy is a threshold algorithm with a change at the value of $k$ that maximises $ - \frac{k}{n}\ln(\frac{k}{n})$ which is easily solve able by taking the derivative w.r.t $k$ and setting to 0:
+
+$$
+0 = \frac{d}{dk}\left[- \frac{k}{n}\ln\left(\frac{k}{n}\right)\right] = -\frac{1}{h}\ln\left(\frac{k}{n}\right) - \frac{1}{h} \implies k = \frac{n}{e}
+$$
+
+Therefore the optimal value is $k_0  = \frac{n}{e}$ for a success rate of $v_0 = -\frac{1}{e}\ln(\frac{1}{e}) = \frac{1}{e}$
+
+\section{Dynamic Programming Pseudocode}
+\label{sec:AppendixB}
+
+\begin{verbatim}
+v_B, v_NB = list(n+1)
+v_B[n+1], v_NB[n+1] = 0
+
+for (k = n -> 0){
+    // calculations of values need in markov equations
+    v_B[k] = (P_O_k * v_NB[k + 1]
+              + P_S_k * max(v_NB[k + 1], P_M_k_giv_S_k)
+              + P_B_k_Pc_k * max(v_NB[k+1],P_M_k_giv_B_k_Pc_k)
+              + P_B_k_P_k * max(v_B[k + 1], P_M_k_giv_B_k_P_k))
+
+    // While we are choosing to accept, mark thresholds
+    // We begin at n and work backwards 
+    // We begin with accepting being better and end up in the survey period.
+    if v_NB[k] <= P_M_k_giv_B_k_Pc_k:
+        B_0 = k
+
+    if v_NB[k] <= P_M_k_giv_S_k:
+        V_0 = k
+
+    // Re-Calculate for NB
+    v_NB[k] = (P_O_k * v_B[k + 1]
+                   + P_S_k * max(v_B[k + 1], P_M_k_giv_S_k)
+                   + P_B_k_Pc_k * max(v_NB[k+1],P_M_k_giv_B_k_Pc_k)
+                   + P_B_k_P_k * max(v_B[k + 1], P_M_k_giv_B_k_P_k))
+
+    if v_B[k] <= P_M_k_giv_S_k:
+            S_0 = k
+}
+
+output -> Success rate = v_B[0] = v_NB[0]
+output -> B_0, S_0, V_0
+
+\end{verbatim}
+
+\end{document}
